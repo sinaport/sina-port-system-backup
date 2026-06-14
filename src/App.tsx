@@ -11,6 +11,7 @@ import { KpiDictionary } from "@/pages/KpiDictionary";
 import { WinsForm } from "@/pages/WinsForm";
 import { BrandAuditForm } from "@/pages/BrandAuditForm";
 import { RegistrySubmit } from "@/pages/RegistrySubmit";
+import { TestingForm } from "@/pages/TestingForm";
 
 function DefaultRedirect() {
     const { person, loading, user } = useAuth();
@@ -76,6 +77,7 @@ export default function App() {
                         <Route path="/log/bottleneck" element={<RegistrySubmit kind="bottleneck" />} />
                         <Route path="/log/winner" element={<RegistrySubmit kind="winner" />} />
                         <Route path="/log/test-input" element={<RegistrySubmit kind="test_input" />} />
+                        <Route path="/testing" element={<TestingForm />} />
                     </Route>
                 </Routes>
             </BrowserRouter>

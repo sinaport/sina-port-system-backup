@@ -1,11 +1,12 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
-import { LogOut, LayoutDashboard, GaugeCircle, AlertCircle, Trophy, FlaskConical, Users, PhoneCall, GraduationCap } from "lucide-react";
+import { LogOut, LayoutDashboard, GaugeCircle, AlertCircle, Trophy, FlaskConical, Users, PhoneCall, GraduationCap, Beaker } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 
 type NavItem = { label: string; to: string; icon: typeof LayoutDashboard };
 
 const COMMON_LOG_NAV: NavItem[] = [
+    { label: "Submit a test", to: "/testing", icon: Beaker },
     { label: "Log bottleneck", to: "/log/bottleneck", icon: AlertCircle },
     { label: "Log winner", to: "/log/winner", icon: Trophy },
     { label: "Log test input", to: "/log/test-input", icon: FlaskConical },
