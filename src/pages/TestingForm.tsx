@@ -295,7 +295,7 @@ export function TestingForm() {
                     <select required value={form.assigned_to} onChange={(e) => set("assigned_to", e.target.value)} className={inputClass}>
                         <option value="">Select team member</option>
                         {panelAssignees.map((m) => (
-                            <option key={m.person_id} value={m.full_name}>{m.full_name} - {m.role}</option>
+                            <option key={m.person_id} value={m.full_name}>{m.full_name} ({m.role})</option>
                         ))}
                     </select>
                 </Field>
