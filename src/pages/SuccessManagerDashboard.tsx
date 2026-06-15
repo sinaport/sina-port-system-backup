@@ -105,7 +105,6 @@ export function SuccessManagerDashboard() {
                                     <th className="px-3 py-2 text-left">Status</th>
                                     <th className="px-3 py-2 text-left">Opted in</th>
                                     <th className="px-3 py-2 text-left">Closed</th>
-                                    <th className="px-3 py-2 text-left">Lead grade</th>
                                     <th className="px-3 py-2 text-left">Ascended</th>
                                     <th className="px-3 py-2 text-left">SM assigned</th>
                                     <th className="px-3 py-2 text-left">Risk</th>
@@ -122,7 +121,6 @@ export function SuccessManagerDashboard() {
                                             <td className="px-3 py-2 text-zinc-700">{m.status ?? "-"}</td>
                                             <td className="px-3 py-2 text-zinc-600 text-xs">{m.date_opted_in ? formatDateTime(m.date_opted_in).split(" ")[0] : "-"}</td>
                                             <td className="px-3 py-2 text-zinc-600 text-xs">{m.date_closed ? formatDateTime(m.date_closed).split(" ")[0] : "-"}</td>
-                                            <td className="px-3 py-2 text-zinc-700">{m.lead_grade ?? "-"}</td>
                                             <td className="px-3 py-2">{ascensionBadge(m.ascended)}</td>
                                             <td className="px-3 py-2 text-zinc-700">{m.success_manager_assigned ?? "-"}</td>
                                             <td className="px-3 py-2">
@@ -160,32 +158,36 @@ export function SuccessManagerDashboard() {
                 {meetings.loading ? (
                     <LoadingState />
                 ) : meetings.data && meetings.data.length > 0 ? (
-                    <div className="space-y-2">
-                        {meetings.data.slice(0, 20).map((m) => (
-                            <div key={m.id} className="bg-white border border-zinc-200 rounded-md p-4">
-                                <div className="flex items-start justify-between gap-3">
-                                    <div className="flex-1 min-w-0">
-                                        <div className="text-sm font-medium text-zinc-900 truncate">{m.title}</div>
-                                        <div className="text-xs text-zinc-500 mt-0.5">
-                                            {formatDateTime(m.started_at)} • {m.duration_minutes} min • {m.host_email}
-                                        </div>
-                                        {m.summary && (
-                                            <div className="text-xs text-zinc-600 mt-2 line-clamp-2">{m.summary}</div>
-                                        )}
-                                    </div>
-                                    {m.recording_url && (
-                                        <a
-                                            href={m.recording_url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="text-xs px-2 py-1 rounded bg-zinc-100 hover:bg-zinc-200 text-zinc-700 whitespace-nowrap"
-                                        >
-                                            Recording
-                                        </a>
-                                    )}
-                                </div>
-                            </div>
-                        ))}
+                    <div className="bg-white border border-zinc-200 rounded-md overflow-hidden">
+                        <table className="w-full text-sm">
+                            <thead className="bg-zinc-50 text-xs text-zinc-500 uppercase tracking-wide">
+                                <tr>
+                                    <th className="px-3 py-2 text-left">Meeting</th>
+                                    <th className="px-3 py-2 text-left">Date</th>
+                                    <th className="px-3 py-2 text-left">Length</th>
+                                    <th className="px-3 py-2 text-left">Host</th>
+                                    <th className="px-3 py-2 text-left">Recording</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {meetings.data.slice(0, 20).map((m) => (
+                                    <tr key={m.id} className="border-t border-zinc-100 hover:bg-zinc-50">
+                                        <td className="px-3 py-2 font-medium text-zinc-900 max-w-xs truncate">{m.title}</td>
+                                        <td className="px-3 py-2 text-zinc-600 text-xs whitespace-nowrap">{formatDateTime(m.started_at)}</td>
+                                        <td className="px-3 py-2 text-zinc-600">{m.duration_minutes} min</td>
+                                        <td className="px-3 py-2 text-zinc-600 text-xs">{m.host_email}</td>
+                                        <td className="px-3 py-2">
+                                            {m.recording_url ? (
+                                                <a href={m.recording_url} target="_blank" rel="noopener noreferrer"
+                                                   className="text-xs px-2 py-1 rounded bg-zinc-100 hover:bg-zinc-200 text-zinc-700">
+                                                    View
+                                                </a>
+                                            ) : <span className="text-xs text-zinc-400">-</span>}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
                 ) : (
                     <EmptyState

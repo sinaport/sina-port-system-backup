@@ -9,7 +9,6 @@ const COMMON_LOG_NAV: NavItem[] = [
     { label: "Submit a test", to: "/testing", icon: Beaker },
     { label: "Log bottleneck", to: "/log/bottleneck", icon: AlertCircle },
     { label: "Log winner", to: "/log/winner", icon: Trophy },
-    { label: "Log test input", to: "/log/test-input", icon: FlaskConical },
 ];
 
 // Admin (CEO / EA / QA) can oversee every role's dashboard, not just their own.

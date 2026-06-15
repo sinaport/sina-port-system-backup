@@ -1,14 +1,14 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CheckCircle2, FlaskConical } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 
-// The Testing Form: each team submits what they want to test, where to apply it,
-// and who's responsible. fn_submit_test auto-names the variant (LP Copy 2, etc.),
-// opens a variant window so incoming leads get tagged, and queues a routing
-// notification to the assignee.
+// The Testing Form: each of the 4 departments submits what they want to test,
+// where to apply it, and who's responsible. fn_submit_test auto-names the variant
+// (LP Copy 2, etc.), opens a variant window so incoming leads get tagged, and
+// queues a routing notification to the assignee.
 
-type TeamKey = "marketing_funnel" | "marketing_ads" | "setter_closer" | "delivery";
+type TeamKey = "marketing" | "setter" | "closer" | "delivery";
 
 interface VariableOption {
     value: string;
@@ -18,65 +18,74 @@ interface VariableOption {
 interface TeamPanel {
     key: TeamKey;
     label: string;
-    team: string; // value passed to fn_submit_test
+    team: string;
+    // which PEOPLE_MASTER departments staff this team's assignees
+    assigneeDepartments: string[];
     variables: VariableOption[];
     applyFields: ("funnel" | "ad_account" | "ad_campaign" | "ad_set" | "editor" | "script_type")[];
-    assignees: string[];
 }
 
+interface TeamMember {
+    person_id: string;
+    full_name: string;
+    department: string;
+    role: string;
+}
+
+// 4 individual departments per Khryzl's spec - NOT combined.
 const PANELS: TeamPanel[] = [
     {
-        key: "marketing_funnel",
-        label: "Marketing — Funnel",
+        key: "marketing",
+        label: "Marketing",
         team: "marketing",
+        assigneeDepartments: ["Admin"], // Marketing Manager / Media Buyer sit under Admin/leadership in PEOPLE_MASTER
         variables: [
             { value: "landing_page_copy", label: "Landing Page Copy" },
             { value: "vsl", label: "VSL" },
             { value: "opt_in_question", label: "Opt-in Question" },
             { value: "funnel_flow", label: "Funnel Flow" },
+            { value: "hook", label: "Ad — Hook" },
+            { value: "angle", label: "Ad — Angle" },
+            { value: "ad_creative_script", label: "Ad — Creative Script" },
+            { value: "meat", label: "Ad — Meat" },
+            { value: "cta", label: "Ad — CTA" },
         ],
-        applyFields: ["funnel"],
-        assignees: ["Peter", "Marketing Manager"],
+        applyFields: ["funnel", "ad_account", "ad_campaign", "ad_set", "editor"],
     },
     {
-        key: "marketing_ads",
-        label: "Marketing — Ads",
-        team: "marketing",
-        variables: [
-            { value: "hook", label: "Hook" },
-            { value: "angle", label: "Angle" },
-            { value: "ad_creative_script", label: "Ad Creative Script" },
-            { value: "meat", label: "Meat" },
-            { value: "cta", label: "CTA" },
-        ],
-        applyFields: ["ad_account", "ad_campaign", "ad_set", "editor"],
-        assignees: ["Media Buyer", "Editor"],
-    },
-    {
-        key: "setter_closer",
-        label: "Setters & Closers",
-        team: "setter_closer",
+        key: "setter",
+        label: "Setter",
+        team: "setter",
+        assigneeDepartments: ["Setter"],
         variables: [
             { value: "outbound_script", label: "Outbound Script" },
             { value: "inbound_script", label: "Inbound Script" },
-            { value: "closing_script", label: "Closing Script" },
             { value: "setter_sop", label: "Setter SOP" },
+        ],
+        applyFields: ["script_type"],
+    },
+    {
+        key: "closer",
+        label: "Closer",
+        team: "closer",
+        assigneeDepartments: ["Closer"],
+        variables: [
+            { value: "closing_script", label: "Closing Script" },
             { value: "closer_sop", label: "Closer SOP" },
         ],
         applyFields: ["script_type"],
-        assignees: ["Jenna Botha", "Hannah McAuley"],
     },
     {
         key: "delivery",
         label: "Delivery",
         team: "delivery",
+        assigneeDepartments: ["Delivery"],
         variables: [
             { value: "webinar_script", label: "Webinar Script" },
             { value: "momentum_call_script", label: "Momentum Call Script" },
             { value: "brand_audit_form", label: "Brand Audit Form" },
         ],
         applyFields: ["script_type"],
-        assignees: ["Victoria Charlotte"],
     },
 ];
 
@@ -102,12 +111,27 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
 
 export function TestingForm() {
     const { person } = useAuth();
-    const [activePanel, setActivePanel] = useState<TeamKey>("marketing_funnel");
+    const [activePanel, setActivePanel] = useState<TeamKey>("marketing");
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [result, setResult] = useState<{ variant_name: string; assigned_to: string | null } | null>(null);
+    const [members, setMembers] = useState<TeamMember[]>([]);
 
     const panel = useMemo(() => PANELS.find((p) => p.key === activePanel)!, [activePanel]);
+
+    // Fetch the live team-member directory so "Assign to" reflects real people
+    useEffect(() => {
+        void supabase
+            .schema("engine" as never)
+            .from("v_team_members")
+            .select("person_id, full_name, department, role")
+            .then(({ data }) => setMembers((data as TeamMember[]) ?? []));
+    }, []);
+
+    const panelAssignees = useMemo(
+        () => members.filter((m) => panel.assigneeDepartments.includes(m.department)),
+        [members, panel]
+    );
 
     const [form, setForm] = useState<Record<string, string>>({
         variable_type: "",
@@ -266,16 +290,12 @@ export function TestingForm() {
                 </div>
 
                 <Field label="Assign to" hint="Who's responsible for running this test">
-                    <input
-                        list={`assignees-${panel.key}`}
-                        value={form.assigned_to}
-                        onChange={(e) => set("assigned_to", e.target.value)}
-                        className={inputClass}
-                        placeholder="Responsible person"
-                    />
-                    <datalist id={`assignees-${panel.key}`}>
-                        {panel.assignees.map((a) => <option key={a} value={a} />)}
-                    </datalist>
+                    <select required value={form.assigned_to} onChange={(e) => set("assigned_to", e.target.value)} className={inputClass}>
+                        <option value="">Select team member</option>
+                        {panelAssignees.map((m) => (
+                            <option key={m.person_id} value={m.full_name}>{m.full_name} — {m.role}</option>
+                        ))}
+                    </select>
                 </Field>
 
                 <Field label="Hypothesis" hint="What you expect to happen and why">
