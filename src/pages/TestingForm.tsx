@@ -44,11 +44,11 @@ const PANELS: TeamPanel[] = [
             { value: "vsl", label: "VSL" },
             { value: "opt_in_question", label: "Opt-in Question" },
             { value: "funnel_flow", label: "Funnel Flow" },
-            { value: "hook", label: "Ad — Hook" },
-            { value: "angle", label: "Ad — Angle" },
-            { value: "ad_creative_script", label: "Ad — Creative Script" },
-            { value: "meat", label: "Ad — Meat" },
-            { value: "cta", label: "Ad — CTA" },
+            { value: "hook", label: "Ad - Hook" },
+            { value: "angle", label: "Ad - Angle" },
+            { value: "ad_creative_script", label: "Ad - Creative Script" },
+            { value: "meat", label: "Ad - Meat" },
+            { value: "cta", label: "Ad - CTA" },
         ],
         applyFields: ["funnel", "ad_account", "ad_campaign", "ad_set", "editor"],
     },
@@ -191,7 +191,9 @@ export function TestingForm() {
 
         setSubmitting(false);
         if (rpcErr) {
-            setError(rpcErr.message);
+            // Keep the real error for debugging; show the user a friendly message.
+            console.error("[TestingForm] fn_submit_test failed:", rpcErr.message);
+            setError("Couldn't submit this test just now. Check your entries and try again, and if it keeps happening let us know.");
             return;
         }
         const r = data as { variant_name: string; assigned_to: string | null };
@@ -206,7 +208,7 @@ export function TestingForm() {
                     <h2 className="text-lg font-semibold mt-3">Test queued: {result.variant_name}</h2>
                     <p className="text-sm text-zinc-500 mt-1">
                         {result.assigned_to
-                            ? `Routed to ${result.assigned_to} — they'll be notified to action it. Leads landing during the test window get tagged with this variant automatically.`
+                            ? `Routed to ${result.assigned_to} - they'll be notified to action it. Leads landing during the test window get tagged with this variant automatically.`
                             : "Leads landing during the test window get tagged with this variant automatically."}
                     </p>
                     <button
@@ -286,14 +288,14 @@ export function TestingForm() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Field label="Start date"><input required type="date" value={form.date_to_test} onChange={(e) => set("date_to_test", e.target.value)} className={inputClass} /></Field>
-                    <Field label="End date" hint="Optional — leave blank for open-ended"><input type="date" value={form.ends_at} onChange={(e) => set("ends_at", e.target.value)} className={inputClass} /></Field>
+                    <Field label="End date" hint="Optional - leave blank for open-ended"><input type="date" value={form.ends_at} onChange={(e) => set("ends_at", e.target.value)} className={inputClass} /></Field>
                 </div>
 
                 <Field label="Assign to" hint="Who's responsible for running this test">
                     <select required value={form.assigned_to} onChange={(e) => set("assigned_to", e.target.value)} className={inputClass}>
                         <option value="">Select team member</option>
                         {panelAssignees.map((m) => (
-                            <option key={m.person_id} value={m.full_name}>{m.full_name} — {m.role}</option>
+                            <option key={m.person_id} value={m.full_name}>{m.full_name} - {m.role}</option>
                         ))}
                     </select>
                 </Field>

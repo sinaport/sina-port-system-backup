@@ -119,14 +119,14 @@ export function KpiDictionary() {
                             <tr key={r.kpi_id} className="hover:bg-zinc-50">
                                 <td className="px-4 py-2 font-mono text-xs text-zinc-700">{r.kpi_id}</td>
                                 <td className="px-4 py-2 font-medium text-zinc-900">{r.kpi_name}</td>
-                                <td className="px-4 py-2 text-zinc-600">{r.economic_engine_flow ?? "—"}</td>
-                                <td className="px-4 py-2 text-zinc-600">{r.department ?? "—"}</td>
+                                <td className="px-4 py-2 text-zinc-600">{r.economic_engine_flow ?? "-"}</td>
+                                <td className="px-4 py-2 text-zinc-600">{r.department ?? "-"}</td>
                                 <td className="px-4 py-2 text-zinc-900">
-                                    {r.target_value ?? "—"}
+                                    {r.target_value ?? "-"}
                                     {r.target_unit ? ` ${r.target_unit}` : ""}
                                 </td>
-                                <td className="px-4 py-2 text-zinc-600">{r.direction ?? "—"}</td>
-                                <td className="px-4 py-2 text-zinc-600">{r.owner_role ?? "—"}</td>
+                                <td className="px-4 py-2 text-zinc-600">{r.direction ?? "-"}</td>
+                                <td className="px-4 py-2 text-zinc-600">{r.owner_role ?? "-"}</td>
                                 <td className="px-4 py-2 text-right">
                                     {isAdmin && (
                                         <button

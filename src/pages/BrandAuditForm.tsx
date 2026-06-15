@@ -167,7 +167,7 @@ export function BrandAuditForm({ variant }: Props) {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <Field label="Business stage">
                                 <select value={form.business_stage as string} onChange={(e) => set("business_stage", e.target.value)} className="form-input">
-                                    <option value="">— Select —</option>
+                                    <option value="">- Select -</option>
                                     <option>Idea stage</option>
                                     <option>Validating</option>
                                     <option>Scaling</option>
@@ -176,7 +176,7 @@ export function BrandAuditForm({ variant }: Props) {
                             </Field>
                             <Field label="Monthly revenue range">
                                 <select value={form.monthly_revenue_range as string} onChange={(e) => set("monthly_revenue_range", e.target.value)} className="form-input">
-                                    <option value="">— Select —</option>
+                                    <option value="">- Select -</option>
                                     {REVENUE_RANGES.map((r) => <option key={r}>{r}</option>)}
                                 </select>
                             </Field>
@@ -212,7 +212,7 @@ export function BrandAuditForm({ variant }: Props) {
                     <Section title="Where you're stuck">
                         <Field label="Biggest block right now">
                             <select value={form.biggest_block as string} onChange={(e) => set("biggest_block", e.target.value)} className="form-input">
-                                <option value="">— Select —</option>
+                                <option value="">- Select -</option>
                                 {BLOCKS.map((b) => <option key={b}>{b}</option>)}
                             </select>
                         </Field>
@@ -237,13 +237,13 @@ export function BrandAuditForm({ variant }: Props) {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <Field label="Mindfulness practice">
                                 <select value={form.mindfulness_practice as string} onChange={(e) => set("mindfulness_practice", e.target.value)} className="form-input">
-                                    <option value="">— Select —</option>
+                                    <option value="">- Select -</option>
                                     {MINDFULNESS_OPTIONS.map((m) => <option key={m}>{m}</option>)}
                                 </select>
                             </Field>
                             <Field label="Social media struggles">
                                 <select value={form.social_media_struggles as string} onChange={(e) => set("social_media_struggles", e.target.value)} className="form-input">
-                                    <option value="">— Select —</option>
+                                    <option value="">- Select -</option>
                                     {SOCIAL_STRUGGLES.map((s) => <option key={s}>{s}</option>)}
                                 </select>
                             </Field>
@@ -259,7 +259,7 @@ export function BrandAuditForm({ variant }: Props) {
                     <Section title="Ready to invest?">
                         <Field label="Investment readiness">
                             <select value={form.investment_readiness as string} onChange={(e) => set("investment_readiness", e.target.value)} className="form-input">
-                                <option value="">— Select —</option>
+                                <option value="">- Select -</option>
                                 <option>Yes, I'm ready to invest in the next 30 days</option>
                                 <option>Maybe, depends on the fit</option>
                                 <option>Not sure yet</option>

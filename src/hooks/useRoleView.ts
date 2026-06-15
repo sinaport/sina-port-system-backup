@@ -12,6 +12,8 @@ export function useRoleView<T = Record<string, unknown>>(viewName: string) {
             const { data, error } = await fromEngine(viewName).select("*");
             if (cancelled) return;
             if (error) {
+                // Keep the real error for debugging, but the UI shows a friendly message.
+                console.error(`[useRoleView] ${viewName}:`, error.message);
                 setError(error.message);
                 setData(null);
             } else {

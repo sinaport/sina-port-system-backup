@@ -3,7 +3,7 @@ import { Database, Search } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { LoadingState, EmptyState } from "@/components/LoadingState";
 
-// Browsable data layer — the "better Airtable" view. Each tab is a Postgres
+// Browsable data layer - the "better Airtable" view. Each tab is a Postgres
 // view in the engine schema; rows are fetched paginated with client search.
 
 interface TableDef {
@@ -27,7 +27,7 @@ const TABLES: TableDef[] = [
 const PAGE_SIZE = 50;
 
 function formatVal(v: unknown): string {
-    if (v === null || v === undefined) return "—";
+    if (v === null || v === undefined) return "-";
     if (typeof v === "boolean") return v ? "Yes" : "No";
     if (typeof v === "string" && /^\d{4}-\d{2}-\d{2}T/.test(v)) {
         return new Date(v).toLocaleString();

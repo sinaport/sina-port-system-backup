@@ -76,7 +76,7 @@ export function SetterDashboard() {
             {metrics.loading ? (
                 <LoadingState label="Loading metrics..." />
             ) : metrics.error ? (
-                <div className="text-sm text-red-600">Error: {metrics.error}</div>
+                <div className="text-sm text-red-600">Couldn't load your numbers right now. Refresh the page, and if it keeps happening let us know.</div>
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {(metrics.data ?? []).map((m) => (
@@ -113,14 +113,14 @@ export function SetterDashboard() {
                             <tbody className="divide-y divide-zinc-100">
                                 {bookings.data.slice(0, 12).map((b) => (
                                     <tr key={b.calendly_event_id}>
-                                        <td className="px-4 py-2 font-medium text-zinc-900">{b.lead_name || "—"}</td>
-                                        <td className="px-4 py-2 text-zinc-600">{b.lead_email || "—"}</td>
-                                        <td className="px-4 py-2 text-zinc-600">{b.host || "—"}</td>
-                                        <td className="px-4 py-2 text-zinc-600">{b.event_name ?? "—"}</td>
+                                        <td className="px-4 py-2 font-medium text-zinc-900">{b.lead_name || "-"}</td>
+                                        <td className="px-4 py-2 text-zinc-600">{b.lead_email || "-"}</td>
+                                        <td className="px-4 py-2 text-zinc-600">{b.host || "-"}</td>
+                                        <td className="px-4 py-2 text-zinc-600">{b.event_name ?? "-"}</td>
                                         <td className="px-4 py-2 text-zinc-600">{formatDateTime(b.start_time)}</td>
                                         <td className="px-4 py-2">
                                             <span className="text-xs px-2 py-0.5 rounded bg-zinc-100 text-zinc-700">
-                                                {b.status ?? "—"}
+                                                {b.status ?? "-"}
                                             </span>
                                         </td>
                                     </tr>
@@ -205,7 +205,7 @@ export function SetterDashboard() {
                                     </div>
                                 </div>
                                 <span className="text-xs px-2 py-0.5 rounded bg-orange-50 text-orange-700">
-                                    Priority {b.priority_score ?? "—"}
+                                    Priority {b.priority_score ?? "-"}
                                 </span>
                             </div>
                         ))}

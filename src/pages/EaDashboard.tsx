@@ -61,6 +61,17 @@ const LABEL_BY_METRIC: Record<string, string> = {
     ingestion_sources_stale: "Stale sources",
 };
 
+// Friendly display names for the raw ingestion table names in the freshness panel.
+// Falls back to the raw source if an unmapped one ever appears, so nothing breaks.
+const SOURCE_LABELS: Record<string, string> = {
+    live_close_leads: "Close - leads",
+    live_close_calls: "Close - calls",
+    live_calendly_events: "Calendly",
+    live_payments: "Payments (Stripe / PayPal / Whop)",
+    live_fathom_meetings: "Fathom",
+    live_hyros_leads: "Hyros",
+};
+
 const ICON_BY_METRIC: Record<string, React.ReactNode> = {
     open_bottlenecks: <AlertTriangle className="w-5 h-5" />,
     active_tests: <FlaskConical className="w-5 h-5" />,
@@ -163,7 +174,7 @@ export function EaDashboard() {
                                     const stale = i.minutes_stale > 90;
                                     return (
                                         <tr key={i.source}>
-                                            <td className="px-4 py-2 font-mono text-xs text-zinc-700">{i.source}</td>
+                                            <td className="px-4 py-2 text-zinc-700">{SOURCE_LABELS[i.source] ?? i.source}</td>
                                             <td className="px-4 py-2 text-zinc-900">{formatNumber(i.total_rows)}</td>
                                             <td className="px-4 py-2 text-zinc-600">{formatDateTime(i.last_ingest_at)}</td>
                                             <td className="px-4 py-2">
@@ -200,11 +211,11 @@ export function EaDashboard() {
                                 <div className="flex-1 min-w-0">
                                     <div className="text-sm font-medium text-zinc-900 truncate">{b.bottleneck_title}</div>
                                     <div className="text-xs text-zinc-500 mt-0.5">
-                                        Owner: {b.owner ?? "_unassigned_"} • {b.affected_metric}
+                                        Owner: {b.owner ?? "Unassigned"} • {b.affected_metric}
                                     </div>
                                 </div>
                                 <span className="text-xs px-2 py-0.5 rounded bg-orange-50 text-orange-700 whitespace-nowrap">
-                                    P{b.priority_score ?? "—"}
+                                    P{b.priority_score ?? "-"}
                                 </span>
                             </div>
                         ))}
@@ -239,7 +250,7 @@ export function EaDashboard() {
                                         <td className="px-4 py-2 font-mono text-xs text-zinc-700">{t.test_id}</td>
                                         <td className="px-4 py-2 text-zinc-900">{t.test_type}</td>
                                         <td className="px-4 py-2 text-zinc-600">{t.economic_engine_flow}</td>
-                                        <td className="px-4 py-2 text-zinc-600">{t.date_to_test ?? "—"}</td>
+                                        <td className="px-4 py-2 text-zinc-600">{t.date_to_test ?? "-"}</td>
                                         <td className="px-4 py-2">
                                             <span className="text-xs px-2 py-0.5 rounded bg-zinc-100 text-zinc-700">
                                                 {t.status_update ?? "queued"}
@@ -279,7 +290,7 @@ export function EaDashboard() {
                                     <tr key={t.id}>
                                         <td className="px-4 py-2 font-medium text-zinc-900">{t.variant_name}</td>
                                         <td className="px-4 py-2 text-zinc-600">{t.team}</td>
-                                        <td className="px-4 py-2 text-zinc-700">{t.assigned_to ?? "—"}</td>
+                                        <td className="px-4 py-2 text-zinc-700">{t.assigned_to ?? "-"}</td>
                                         <td className="px-4 py-2 text-zinc-600 text-xs">
                                             {t.date_to_test}{t.ends_at ? ` → ${t.ends_at}` : " → open"}
                                         </td>

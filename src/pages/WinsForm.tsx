@@ -90,7 +90,7 @@ export function WinsForm() {
                                 onChange={(e) => setForm({ ...form, program: e.target.value })}
                                 className="form-input"
                             >
-                                <option value="">— Select —</option>
+                                <option value="">- Select -</option>
                                 <option>Brand with Sina</option>
                                 <option>GPTBY Sprint</option>
                                 <option>Brand Audit GM3.0</option>
@@ -103,7 +103,7 @@ export function WinsForm() {
                                 onChange={(e) => setForm({ ...form, win_type: e.target.value })}
                                 className="form-input"
                             >
-                                <option value="">— Select —</option>
+                                <option value="">- Select -</option>
                                 <option>Revenue</option>
                                 <option>New clients</option>
                                 <option>Process improvement</option>
@@ -139,7 +139,7 @@ export function WinsForm() {
                                 onChange={(e) => setForm({ ...form, timeframe: e.target.value })}
                                 className="form-input"
                             >
-                                <option value="">— Select —</option>
+                                <option value="">- Select -</option>
                                 <option>Today</option>
                                 <option>This week</option>
                                 <option>Last 30 days</option>

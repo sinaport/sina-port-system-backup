@@ -197,7 +197,9 @@ export function RegistrySubmit({ kind }: Props) {
 
         setSubmitting(false);
         if (dbErr) {
-            setError(dbErr.message);
+            // Keep the real error for debugging; show the user a friendly message.
+            console.error("[RegistrySubmit] insert failed:", dbErr.message);
+            setError("Couldn't save this just now. Check your entries and try again, and if it keeps happening let us know.");
             return;
         }
         setSubmitted(true);

@@ -121,7 +121,7 @@ export function CloserDashboard() {
                             ))}
                         </div>
                         <p className="text-xs text-zinc-400 mt-2">
-                            High vs low ticket split uses a $1,500 boundary for now — tell us your exact cutoff (or product list) and we'll lock it in.
+                            High vs low ticket split uses a $1,500 boundary for now - tell us your exact cutoff (or product list) and we'll lock it in.
                         </p>
                     </>
                 )}
@@ -188,12 +188,12 @@ export function CloserDashboard() {
                             <tbody className="divide-y divide-zinc-100">
                                 {upcoming.data.slice(0, 15).map((c) => (
                                     <tr key={c.event_id}>
-                                        <td className="px-4 py-2 font-medium text-zinc-900">{c.lead_name || "—"}</td>
-                                        <td className="px-4 py-2 text-zinc-600">{c.lead_email || "—"}</td>
-                                        <td className="px-4 py-2 text-zinc-600">{c.host || "—"}</td>
+                                        <td className="px-4 py-2 font-medium text-zinc-900">{c.lead_name || "-"}</td>
+                                        <td className="px-4 py-2 text-zinc-600">{c.lead_email || "-"}</td>
+                                        <td className="px-4 py-2 text-zinc-600">{c.host || "-"}</td>
                                         <td className="px-4 py-2 text-zinc-600">{c.event_type_name}</td>
                                         <td className="px-4 py-2">
-                                            <span className="text-xs px-2 py-0.5 rounded bg-zinc-100 text-zinc-700">{c.status ?? "—"}</span>
+                                            <span className="text-xs px-2 py-0.5 rounded bg-zinc-100 text-zinc-700">{c.status ?? "-"}</span>
                                         </td>
                                         <td className="px-4 py-2 text-zinc-600">{formatDateTime(c.start_time)}</td>
                                     </tr>
@@ -265,7 +265,7 @@ export function CloserDashboard() {
                                     </div>
                                 </div>
                                 <span className="text-xs px-2 py-0.5 rounded bg-emerald-50 text-emerald-700">
-                                    Priority {w.priority_score ?? "—"}
+                                    Priority {w.priority_score ?? "-"}
                                 </span>
                             </div>
                         ))}
