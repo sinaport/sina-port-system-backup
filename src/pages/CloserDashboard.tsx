@@ -41,10 +41,10 @@ interface Winner {
 }
 
 const LABEL_BY_METRIC: Record<string, string> = {
-    closes_today: "Closes scheduled today",
-    week_revenue: "Revenue this week",
-    month_revenue: "Revenue this month",
-    payments_today: "Payments today",
+    revenue_today: "Revenue today",
+    revenue_week: "Revenue this week",
+    revenue_month: "Revenue this month",
+    closes_today: "Payments today",
 };
 
 const REVENUE_SPLIT_LABELS: Record<string, string> = {
@@ -56,10 +56,10 @@ const REVENUE_SPLIT_LABELS: Record<string, string> = {
 const REVENUE_SPLIT_ORDER = ["total_revenue", "recurring_revenue", "onetime_hto", "onetime_lto"];
 
 const FLAG_BY_METRIC: Record<string, "green" | "red" | "blue" | null> = {
+    revenue_today: "green",
+    revenue_week: "green",
+    revenue_month: "green",
     closes_today: "blue",
-    week_revenue: "green",
-    month_revenue: "green",
-    payments_today: "green",
 };
 
 function formatMetricValue(metric: string, value: string): string {

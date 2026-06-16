@@ -43,8 +43,9 @@ function ascensionBadge(ascended: string | null) {
 }
 
 const LABEL_BY_METRIC: Record<string, string> = {
-    meetings_this_week: "Meetings this week",
     meetings_today: "Meetings today",
+    meetings_week: "Meetings this week",
+    meetings_month: "Meetings this month",
     avg_meeting_minutes: "Avg meeting length",
 };
 
@@ -67,7 +68,7 @@ export function SuccessManagerDashboard() {
             {metrics.loading ? (
                 <LoadingState label="Loading metrics..." />
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {(metrics.data ?? []).map((m) => (
                         <MetricCard
                             key={m.metric}

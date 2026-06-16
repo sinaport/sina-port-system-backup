@@ -28,16 +28,16 @@ interface Bottleneck {
 }
 
 const ICON_BY_METRIC: Record<string, React.ReactNode> = {
-    today_bookings: <Calendar className="w-5 h-5" />,
-    tomorrow_bookings: <Calendar className="w-5 h-5" />,
-    week_bookings: <TrendingUp className="w-5 h-5" />,
+    bookings_today: <Calendar className="w-5 h-5" />,
+    bookings_week: <TrendingUp className="w-5 h-5" />,
+    bookings_month: <TrendingUp className="w-5 h-5" />,
     new_leads_today: <UserPlus className="w-5 h-5" />,
 };
 
 const LABEL_BY_METRIC: Record<string, string> = {
-    today_bookings: "Bookings today",
-    tomorrow_bookings: "Bookings tomorrow",
-    week_bookings: "Bookings this week",
+    bookings_today: "Bookings today",
+    bookings_week: "Bookings this week",
+    bookings_month: "Bookings this month",
     new_leads_today: "New leads today",
 };
 
