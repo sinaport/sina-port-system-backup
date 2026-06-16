@@ -1,6 +1,7 @@
-import { Calendar, UserPlus, ClipboardList, TrendingUp, Phone } from "lucide-react";
+import { Calendar, UserPlus, ClipboardList, TrendingUp } from "lucide-react";
 import { MetricCard } from "@/components/MetricCard";
 import { LoadingState, EmptyState } from "@/components/LoadingState";
+import { SetterTrackingDaily } from "@/components/SetterTrackingDaily";
 import { useRoleView } from "@/hooks/useRoleView";
 import type { DashboardMetric } from "@/types/schema";
 import { formatDateTime } from "@/lib/utils";
@@ -16,24 +17,6 @@ interface Booking {
     booked_at: string;
     hours_until_call: number;
 }
-
-interface SetterTrack {
-    setter: string;
-    dials: number;
-    answered: number;
-    answer_rate_pct: number;
-    inbound_dials: number;
-    inbound_taken: number;
-    outbound_dials: number;
-    outbound_taken: number;
-    total_taken: number;
-    avg_talk_sec: number;
-    dials_today: number;
-    dials_this_week: number;
-}
-
-// Answer-rate KPI threshold: below 45% reads red (matches the reference build's red = KPI not met)
-const ANSWER_RATE_TARGET = 45;
 
 interface Bottleneck {
     bottleneck_id: string;
@@ -62,7 +45,6 @@ export function SetterDashboard() {
     const metrics = useRoleView<DashboardMetric>("v_setter_dashboard");
     const bookings = useRoleView<Booking>("v_setter_recent_bookings");
     const bottlenecks = useRoleView<Bottleneck>("v_setter_my_bottlenecks");
-    const tracking = useRoleView<SetterTrack>("v_setter_tracking");
 
     return (
         <div className="space-y-8">
@@ -136,54 +118,7 @@ export function SetterDashboard() {
                 )}
             </section>
 
-            <section>
-                <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-base font-semibold text-zinc-900">
-                        <Phone className="inline w-4 h-4 mr-1" />
-                        Setter tracking
-                    </h2>
-                    <div className="text-xs text-zinc-500">Call activity per setter. Answer rate below {ANSWER_RATE_TARGET}% in red.</div>
-                </div>
-                {tracking.loading ? (
-                    <LoadingState />
-                ) : tracking.data && tracking.data.length > 0 ? (
-                    <div className="bg-white rounded-lg border border-zinc-200 overflow-x-auto">
-                        <table className="w-full text-sm">
-                            <thead className="bg-zinc-50 text-zinc-600 text-left text-xs uppercase">
-                                <tr>
-                                    <th className="px-3 py-2">Setter</th>
-                                    <th className="px-3 py-2">Dials</th>
-                                    <th className="px-3 py-2">Today</th>
-                                    <th className="px-3 py-2">Answered</th>
-                                    <th className="px-3 py-2">Answer rate</th>
-                                    <th className="px-3 py-2">Inbound taken</th>
-                                    <th className="px-3 py-2">Outbound taken</th>
-                                    <th className="px-3 py-2">Avg talk</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-zinc-100">
-                                {tracking.data.map((s) => {
-                                    const below = Number(s.answer_rate_pct) < ANSWER_RATE_TARGET;
-                                    return (
-                                        <tr key={s.setter}>
-                                            <td className="px-3 py-2 font-medium text-zinc-900">{s.setter}</td>
-                                            <td className="px-3 py-2 text-zinc-700">{s.dials.toLocaleString()}</td>
-                                            <td className="px-3 py-2 text-zinc-600">{s.dials_today}</td>
-                                            <td className="px-3 py-2 text-zinc-700">{s.answered.toLocaleString()}</td>
-                                            <td className={`px-3 py-2 font-medium ${below ? "text-red-600" : "text-emerald-600"}`}>{s.answer_rate_pct}%</td>
-                                            <td className="px-3 py-2 text-zinc-600">{s.inbound_taken}</td>
-                                            <td className="px-3 py-2 text-zinc-600">{s.outbound_taken}</td>
-                                            <td className="px-3 py-2 text-zinc-600">{Math.floor(s.avg_talk_sec / 60)}m {s.avg_talk_sec % 60}s</td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                ) : (
-                    <EmptyState title="No call data yet" description="Setter call activity from Close will appear here." />
-                )}
-            </section>
+            <SetterTrackingDaily />
 
             <section>
                 <div className="flex items-center justify-between mb-3">
