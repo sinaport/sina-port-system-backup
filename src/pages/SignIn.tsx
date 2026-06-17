@@ -1,8 +1,9 @@
 import { useState } from "react";
+import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 
 export function SignIn() {
-    const { signIn, signInWithOtp } = useAuth();
+    const { signIn, signInWithOtp, user } = useAuth();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [mode, setMode] = useState<"password" | "magic">("password");
@@ -26,6 +27,9 @@ export function SignIn() {
             else setMagicSent(true);
         }
     };
+
+    // Already authenticated (or just signed in) -> let the role router send them home.
+    if (user) return <Navigate to="/" replace />;
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-zinc-50 px-4">
