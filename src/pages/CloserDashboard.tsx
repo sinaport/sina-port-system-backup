@@ -151,17 +151,22 @@ export function CloserDashboard() {
                 {kpis.loading ? (
                     <LoadingState />
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        {KPI_ORDER.map((key) => (
-                            <MetricCard
-                                key={key}
-                                label={KPI_LABELS[key]}
-                                value={`${formatNumber(kpiByMetric[key] ?? "0")}${KPI_PCT.has(key) ? "%" : ""}`}
-                                flag={kpiFlag(key, kpiByMetric[key] ?? "0")}
-                                icon={<PhoneCall className="w-5 h-5" />}
-                            />
-                        ))}
-                    </div>
+                    <>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            {KPI_ORDER.map((key) => (
+                                <MetricCard
+                                    key={key}
+                                    label={KPI_LABELS[key]}
+                                    value={`${formatNumber(kpiByMetric[key] ?? "0")}${KPI_PCT.has(key) ? "%" : ""}`}
+                                    flag={kpiFlag(key, kpiByMetric[key] ?? "0")}
+                                    icon={<PhoneCall className="w-5 h-5" />}
+                                />
+                            ))}
+                        </div>
+                        <p className="text-xs text-zinc-400 mt-2">
+                            Show rate counts a call as shown when a Fathom recording exists, so it undercounts calls that weren't recorded. Cash collection is based on the Collection Status in Airtable. Both get exact once attendance and payment status are captured at the source.
+                        </p>
+                    </>
                 )}
             </section>
 
