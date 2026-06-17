@@ -64,6 +64,13 @@ const KPI_LABELS: Record<string, string> = {
 };
 const KPI_ORDER = ["sets", "live_calls", "show_rate", "cash_collection"];
 const KPI_PCT = new Set(["show_rate", "cash_collection"]);
+// Her daily targets (Dept Workflows doc): red = not met.
+const KPI_TARGETS: Record<string, number> = { show_rate: 70, cash_collection: 40 };
+function kpiFlag(key: string, value: string): "green" | "red" | "blue" {
+    const t = KPI_TARGETS[key];
+    if (t === undefined) return "blue";
+    return Number(value) >= t ? "green" : "red";
+}
 
 const FLAG_BY_METRIC: Record<string, "green" | "red" | "blue" | null> = {
     revenue_today: "green",
@@ -139,7 +146,7 @@ export function CloserDashboard() {
             <section>
                 <div className="flex items-center justify-between mb-3">
                     <h2 className="text-base font-semibold text-zinc-900">Closer KPIs</h2>
-                    <div className="text-xs text-zinc-500">This month</div>
+                    <div className="text-xs text-zinc-500">This month · targets: show rate &ge; 70%, cash collection &ge; 40% (red = not met)</div>
                 </div>
                 {kpis.loading ? (
                     <LoadingState />
@@ -150,7 +157,7 @@ export function CloserDashboard() {
                                 key={key}
                                 label={KPI_LABELS[key]}
                                 value={`${formatNumber(kpiByMetric[key] ?? "0")}${KPI_PCT.has(key) ? "%" : ""}`}
-                                flag="blue"
+                                flag={kpiFlag(key, kpiByMetric[key] ?? "0")}
                                 icon={<PhoneCall className="w-5 h-5" />}
                             />
                         ))}

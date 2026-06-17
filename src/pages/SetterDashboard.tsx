@@ -74,8 +74,8 @@ export function SetterDashboard() {
 
             <section>
                 <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-base font-semibold text-zinc-900">Recent bookings</h2>
-                    <div className="text-xs text-zinc-500">Last 14 days</div>
+                    <h2 className="text-base font-semibold text-zinc-900">Inbound bookings (Calendly)</h2>
+                    <div className="text-xs text-zinc-500">From Calendly / Google Calendar · last 14 days</div>
                 </div>
                 {bookings.loading ? (
                     <LoadingState />

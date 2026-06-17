@@ -87,6 +87,21 @@ const FLAG_BY_METRIC = (metric: string, value: string): "green" | "red" | "blue"
     return "blue";
 };
 
+interface RepPerf {
+    setter: string;
+    dials: number;
+    answered: number;
+    answer_rate_pct: number;
+}
+
+const TOTALS_LABEL: Record<string, string> = {
+    dials: "Dials",
+    calendly_events: "Calendly events",
+    fathom_calls: "Fathom calls",
+};
+const TOTALS_ORDER = ["dials", "calendly_events", "fathom_calls"];
+const ANSWER_RATE_TARGET = 45;
+
 export function EaDashboard() {
     const metrics = useRoleView<DashboardMetric>("v_ea_dashboard");
     const ingestion = useRoleView<IngestionHealth>("v_ea_ingestion_health");
@@ -94,6 +109,18 @@ export function EaDashboard() {
     const tests = useRoleView<ActiveTest>("v_ea_active_tests");
     const alerts = useRoleView<Alert>("v_ea_alerts");
     const runningTests = useRoleView<RunningTest>("v_ea_running_tests");
+    const totals = useRoleView<DashboardMetric>("v_ops_totals");
+    const reps = useRoleView<RepPerf>("v_setter_tracking");
+
+    const totalBy = Object.fromEntries((totals.data ?? []).map((m) => [m.metric, m.value]));
+    const repRows = (reps.data ?? []).map((r) => ({
+        rep: r.setter,
+        answered: Number(r.answered),
+        notAnswered: Math.max(0, Number(r.dials) - Number(r.answered)),
+        total: Number(r.dials),
+        rate: Number(r.answer_rate_pct),
+    })).sort((a, b) => b.total - a.total);
+    const maxBar = Math.max(1, ...repRows.map((r) => r.total));
 
     return (
         <div className="space-y-8">
@@ -147,6 +174,75 @@ export function EaDashboard() {
                     ))}
                 </div>
             )}
+
+            {/* Data-source totals */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {TOTALS_ORDER.map((key) => (
+                    <MetricCard key={key} label={TOTALS_LABEL[key]} value={formatNumber(totalBy[key] ?? "0")} flag="blue" icon={<Activity className="w-5 h-5" />} />
+                ))}
+            </div>
+
+            {/* Rep performance (answered vs not answered) */}
+            <section>
+                <h2 className="text-base font-semibold text-zinc-900 mb-3">Rep performance</h2>
+                {reps.loading ? (
+                    <LoadingState />
+                ) : repRows.length > 0 ? (
+                    <div className="bg-white border border-zinc-200 rounded-lg p-4 space-y-2">
+                        {repRows.slice(0, 15).map((r) => (
+                            <div key={r.rep} className="flex items-center gap-3 text-xs">
+                                <div className="w-32 truncate text-zinc-700">{r.rep}</div>
+                                <div className="flex-1 flex h-4 rounded overflow-hidden bg-zinc-100">
+                                    <div className="bg-emerald-500" style={{ width: `${(r.answered / maxBar) * 100}%` }} title={`Answered ${r.answered}`} />
+                                    <div className="bg-red-400" style={{ width: `${(r.notAnswered / maxBar) * 100}%` }} title={`Not answered ${r.notAnswered}`} />
+                                </div>
+                                <div className="w-10 text-right text-zinc-500">{r.total}</div>
+                            </div>
+                        ))}
+                        <div className="flex gap-4 text-xs text-zinc-500 pt-1">
+                            <span><span className="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-1" />Answered</span>
+                            <span><span className="inline-block w-2 h-2 rounded-full bg-red-400 mr-1" />Not answered</span>
+                        </div>
+                    </div>
+                ) : (
+                    <EmptyState title="No call data yet" description="Rep call activity will appear here." />
+                )}
+            </section>
+
+            {/* Answer rate table */}
+            <section>
+                <h2 className="text-base font-semibold text-zinc-900 mb-3">Answer rate</h2>
+                {reps.loading ? (
+                    <LoadingState />
+                ) : repRows.length > 0 ? (
+                    <div className="bg-white border border-zinc-200 rounded-md overflow-hidden">
+                        <table className="w-full text-sm">
+                            <thead className="bg-zinc-50 text-xs text-zinc-500 uppercase">
+                                <tr>
+                                    <th className="px-4 py-2 text-left">Rep</th>
+                                    <th className="px-4 py-2 text-left">Answered</th>
+                                    <th className="px-4 py-2 text-left">Not answered</th>
+                                    <th className="px-4 py-2 text-left">Total</th>
+                                    <th className="px-4 py-2 text-left">Answer rate</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-zinc-100">
+                                {repRows.map((r) => (
+                                    <tr key={r.rep}>
+                                        <td className="px-4 py-2 font-medium text-zinc-900">{r.rep}</td>
+                                        <td className="px-4 py-2 text-emerald-700">{r.answered}</td>
+                                        <td className="px-4 py-2 text-red-600">{r.notAnswered}</td>
+                                        <td className="px-4 py-2 text-zinc-700">{r.total}</td>
+                                        <td className={`px-4 py-2 font-medium ${r.rate < ANSWER_RATE_TARGET ? "text-red-600" : "text-emerald-600"}`}>{r.rate}%</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                ) : (
+                    <EmptyState title="No call data yet" description="Answer rates will appear here." />
+                )}
+            </section>
 
             <section>
                 <div className="flex items-center justify-between mb-3">

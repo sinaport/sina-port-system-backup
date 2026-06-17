@@ -25,6 +25,8 @@ interface Row {
 // Daily KPI targets from the reference (pending Khryzl's confirmation). Red = not met.
 const TARGET_DIALS_UNIQUE = 200;
 const TARGET_ANSWER_RATE = 45;
+const TARGET_SPEED_MIN = 5; // Speed to Lead <= 5 min
+const TARGET_CONVERSATIONS = 1; // Conversations (1 min+) >= 1
 
 function isoDay(d: Date): string {
     return d.toISOString().slice(0, 10);
@@ -75,7 +77,7 @@ export function SetterTrackingDaily() {
             <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                 <h2 className="text-base font-semibold text-zinc-900">
                     <Phone className="inline w-4 h-4 mr-1" />
-                    Daily setter tracking
+                    Outbound calls (Close CRM)
                 </h2>
                 <div className="flex items-center gap-2">
                     <button
@@ -103,7 +105,7 @@ export function SetterTrackingDaily() {
                 </div>
             </div>
             <div className="text-xs text-zinc-500 mb-2">
-                Targets: dials &ge; {TARGET_DIALS_UNIQUE} unique, answer rate &ge; {TARGET_ANSWER_RATE}%. Red = not met. (Sets and show-rate columns coming once defined.)
+                Targets: dials &ge; {TARGET_DIALS_UNIQUE} unique, speed to lead &le; {TARGET_SPEED_MIN}m, conversations &ge; {TARGET_CONVERSATIONS}, answer rate &ge; {TARGET_ANSWER_RATE}%. Red = not met.
             </div>
 
             {loading ? (
@@ -134,8 +136,8 @@ export function SetterTrackingDaily() {
                                         <td className={`px-3 py-2 ${dialsLow ? "text-red-600" : "text-zinc-700"}`}>
                                             {r.dials.toLocaleString()} <span className="text-zinc-400">({r.unique_leads})</span>
                                         </td>
-                                        <td className="px-3 py-2 text-zinc-600">{speed(r.avg_speed_to_lead_min)}</td>
-                                        <td className="px-3 py-2 text-zinc-600">{r.conversations_1min}</td>
+                                        <td className={`px-3 py-2 ${r.avg_speed_to_lead_min !== null && r.avg_speed_to_lead_min > TARGET_SPEED_MIN ? "text-red-600" : "text-zinc-600"}`}>{speed(r.avg_speed_to_lead_min)}</td>
+                                        <td className={`px-3 py-2 ${r.conversations_1min < TARGET_CONVERSATIONS ? "text-red-600" : "text-zinc-600"}`}>{r.conversations_1min}</td>
                                         <td className="px-3 py-2 text-zinc-600">{talk(r.talk_time_sec)}</td>
                                         <td className="px-3 py-2 text-zinc-600">{r.inbound_taken}</td>
                                         <td className="px-3 py-2 text-zinc-600">{r.outbound_taken}</td>
