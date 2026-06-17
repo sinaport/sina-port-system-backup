@@ -49,11 +49,21 @@ const LABEL_BY_METRIC: Record<string, string> = {
 
 const REVENUE_SPLIT_LABELS: Record<string, string> = {
     total_revenue: "Total this month",
-    recurring_revenue: "Recurring",
-    onetime_hto: "One-time (high ticket)",
-    onetime_lto: "One-time (low ticket)",
+    hto_purchases: "HTO purchases",
+    hto_recurring: "HTO recurring",
+    lto_purchases: "LTO purchases",
 };
-const REVENUE_SPLIT_ORDER = ["total_revenue", "recurring_revenue", "onetime_hto", "onetime_lto"];
+const REVENUE_SPLIT_ORDER = ["total_revenue", "hto_purchases", "hto_recurring", "lto_purchases"];
+
+// Closer KPIs (item 4): sets / live calls / show rate / cash collection
+const KPI_LABELS: Record<string, string> = {
+    sets: "Sets",
+    live_calls: "Live calls",
+    show_rate: "Show rate",
+    cash_collection: "Cash collection",
+};
+const KPI_ORDER = ["sets", "live_calls", "show_rate", "cash_collection"];
+const KPI_PCT = new Set(["show_rate", "cash_collection"]);
 
 const FLAG_BY_METRIC: Record<string, "green" | "red" | "blue" | null> = {
     revenue_today: "green",
@@ -74,8 +84,10 @@ export function CloserDashboard() {
     const winners = useRoleView<Winner>("v_closer_my_winners");
     const revenueSplit = useRoleView<DashboardMetric>("v_closer_revenue_split");
     const tracking = useRoleView<CloserTrack>("v_closer_tracking");
+    const kpis = useRoleView<DashboardMetric>("v_closer_kpis");
 
     const splitByMetric = Object.fromEntries((revenueSplit.data ?? []).map((m) => [m.metric, m.value]));
+    const kpiByMetric = Object.fromEntries((kpis.data ?? []).map((m) => [m.metric, m.value]));
 
     return (
         <div className="space-y-8">
@@ -120,10 +132,29 @@ export function CloserDashboard() {
                                 />
                             ))}
                         </div>
-                        <p className="text-xs text-zinc-400 mt-2">
-                            High vs low ticket split uses a $1,500 boundary for now - tell us your exact cutoff (or product list) and we'll lock it in.
-                        </p>
                     </>
+                )}
+            </section>
+
+            <section>
+                <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-base font-semibold text-zinc-900">Closer KPIs</h2>
+                    <div className="text-xs text-zinc-500">This month</div>
+                </div>
+                {kpis.loading ? (
+                    <LoadingState />
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {KPI_ORDER.map((key) => (
+                            <MetricCard
+                                key={key}
+                                label={KPI_LABELS[key]}
+                                value={`${formatNumber(kpiByMetric[key] ?? "0")}${KPI_PCT.has(key) ? "%" : ""}`}
+                                flag="blue"
+                                icon={<PhoneCall className="w-5 h-5" />}
+                            />
+                        ))}
+                    </div>
                 )}
             </section>
 
