@@ -38,7 +38,7 @@ const PANELS: TeamPanel[] = [
         key: "marketing",
         label: "Marketing",
         team: "marketing",
-        assigneeDepartments: ["Admin"], // Marketing Manager / Media Buyer sit under Admin/leadership in PEOPLE_MASTER
+        assigneeDepartments: ["Marketing", "Admin"], // Marketing team + leadership oversight
         variables: [
             { value: "landing_page_copy", label: "Landing Page Copy" },
             { value: "vsl", label: "VSL" },
