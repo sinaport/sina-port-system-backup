@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { supabase, fromDictionary } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
@@ -143,12 +143,15 @@ export function RegistrySubmit({ kind }: Props) {
         status_update: "Queued",
     }));
 
-    // Default owner to current user's first name on mount
+    // Default owner to the current user's first name ONCE, when person first loads.
+    // Guarded by a ref (not form.owner in deps) so clearing the field doesn't refill it.
+    const ownerInit = useRef(false);
     useEffect(() => {
-        if (person?.full_name && !form.owner) {
-            setForm((f) => ({ ...f, owner: person.full_name.split(" ")[0] }));
+        if (!ownerInit.current && person?.full_name) {
+            ownerInit.current = true;
+            setForm((f) => (f.owner ? f : { ...f, owner: person.full_name.split(" ")[0] }));
         }
-    }, [person, form.owner]);
+    }, [person]);
 
     const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
