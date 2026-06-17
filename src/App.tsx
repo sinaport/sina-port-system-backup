@@ -13,6 +13,7 @@ import { BrandAuditForm } from "@/pages/BrandAuditForm";
 import { RegistrySubmit } from "@/pages/RegistrySubmit";
 import { TestingForm } from "@/pages/TestingForm";
 import { DataBrowser } from "@/pages/DataBrowser";
+import { TeamRegistry } from "@/pages/TeamRegistry";
 
 function DefaultRedirect() {
     const { person, loading, user } = useAuth();
@@ -80,6 +81,7 @@ export default function App() {
                         <Route path="/log/test-input" element={<RegistrySubmit kind="test_input" />} />
                         <Route path="/testing" element={<TestingForm />} />
                         <Route path="/data" element={<DataBrowser />} />
+                        <Route path="/team/new" element={<TeamRegistry />} />
                     </Route>
                 </Routes>
             </BrowserRouter>
