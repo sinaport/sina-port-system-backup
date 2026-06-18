@@ -181,9 +181,15 @@ export function EaDashboard() {
 
     return (
         <div className="space-y-8">
-            <header>
-                <h1 className="text-2xl font-semibold text-zinc-900">Operations overview</h1>
-                <p className="text-sm text-zinc-500">Cross-team health and active priority work.</p>
+            <header className="flex items-start justify-between flex-wrap gap-3">
+                <div>
+                    <h1 className="text-2xl font-semibold text-zinc-900">Operations overview</h1>
+                    <p className="text-sm text-zinc-500">Cross-team health and active priority work.</p>
+                </div>
+                <div className="flex flex-col items-end gap-1">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">Department metrics range</span>
+                    <DateRangeFilter value={range} onChange={setRange} />
+                </div>
             </header>
 
             {/* Anomaly alerts - surfaced prominently when present */}
@@ -239,11 +245,10 @@ export function EaDashboard() {
                 ))}
             </div>
 
-            {/* All-department metrics, grouped (Leads / Calendly / Sales), date-filterable. */}
-            <div className="flex items-center justify-between flex-wrap gap-2">
-                <h2 className="text-base font-semibold text-zinc-900">Department metrics</h2>
-                <DateRangeFilter value={range} onChange={setRange} />
-            </div>
+            {/* All-department metrics, grouped (Leads / Calendly / Sales). Range = filter in header. */}
+            <h2 className="text-base font-semibold text-zinc-900">
+                Department metrics <span className="text-xs font-normal text-zinc-400">· {range.label}</span>
+            </h2>
             {opsLoading ? (
                 <LoadingState label="Loading department metrics..." />
             ) : (
