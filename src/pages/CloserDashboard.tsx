@@ -1,4 +1,5 @@
-import { DollarSign, PhoneCall, Trophy } from "lucide-react";
+import { DollarSign, PhoneCall } from "lucide-react";
+import { RegistrySections } from "@/components/RegistrySections";
 import { MetricCard } from "@/components/MetricCard";
 import { LoadingState, EmptyState } from "@/components/LoadingState";
 import { useRoleView } from "@/hooks/useRoleView";
@@ -31,14 +32,6 @@ interface Payment {
     customer_email: string;
     paid_at: string;
     description: string;
-}
-
-interface Winner {
-    winner_id: string;
-    winner_title: string;
-    winning_metric: string;
-    priority_score: string;
-    status: string;
 }
 
 const LABEL_BY_METRIC: Record<string, string> = {
@@ -89,7 +82,6 @@ export function CloserDashboard() {
     const metrics = useRoleView<DashboardMetric>("v_closer_dashboard");
     const upcoming = useRoleView<UpcomingCall>("v_closer_upcoming_calls");
     const payments = useRoleView<Payment>("v_closer_recent_payments");
-    const winners = useRoleView<Winner>("v_closer_my_winners");
     const revenueSplit = useRoleView<DashboardMetric>("v_closer_revenue_split");
     const tracking = useRoleView<CloserTrack>("v_closer_tracking");
     const kpis = useRoleView<DashboardMetric>("v_closer_kpis");
@@ -298,36 +290,7 @@ export function CloserDashboard() {
                 )}
             </section>
 
-            <section>
-                <h2 className="text-base font-semibold text-zinc-900 mb-3">
-                    <Trophy className="inline w-4 h-4 mr-1" />
-                    Your winners
-                </h2>
-                {winners.loading ? (
-                    <LoadingState />
-                ) : winners.data && winners.data.length > 0 ? (
-                    <div className="space-y-2">
-                        {winners.data.map((w) => (
-                            <div key={w.winner_id} className="bg-white border border-zinc-200 rounded-md p-3 flex items-start justify-between">
-                                <div>
-                                    <div className="text-sm font-medium text-zinc-900">{w.winner_title}</div>
-                                    <div className="text-xs text-zinc-500 mt-0.5">
-                                        {w.winning_metric} • {w.status ?? "open"}
-                                    </div>
-                                </div>
-                                <span className="text-xs px-2 py-0.5 rounded bg-emerald-50 text-emerald-700">
-                                    Priority {w.priority_score ?? "-"}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <EmptyState
-                        title="No winners assigned yet"
-                        description="Winning patterns flagged for your role will appear here."
-                    />
-                )}
-            </section>
+            <RegistrySections />
         </div>
     );
 }

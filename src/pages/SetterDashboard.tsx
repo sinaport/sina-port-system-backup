@@ -1,7 +1,8 @@
-import { Calendar, UserPlus, ClipboardList, TrendingUp } from "lucide-react";
+import { Calendar, UserPlus, TrendingUp } from "lucide-react";
 import { MetricCard } from "@/components/MetricCard";
 import { LoadingState, EmptyState } from "@/components/LoadingState";
 import { SetterTrackingDaily } from "@/components/SetterTrackingDaily";
+import { RegistrySections } from "@/components/RegistrySections";
 import { useRoleView } from "@/hooks/useRoleView";
 import type { DashboardMetric } from "@/types/schema";
 import { formatDateTime } from "@/lib/utils";
@@ -16,15 +17,6 @@ interface Booking {
     start_time: string;
     booked_at: string;
     hours_until_call: number;
-}
-
-interface Bottleneck {
-    bottleneck_id: string;
-    bottleneck_title: string;
-    affected_metric: string;
-    priority_score: string;
-    status: string | null;
-    date_created: string;
 }
 
 const ICON_BY_METRIC: Record<string, React.ReactNode> = {
@@ -44,7 +36,6 @@ const LABEL_BY_METRIC: Record<string, string> = {
 export function SetterDashboard() {
     const metrics = useRoleView<DashboardMetric>("v_setter_dashboard");
     const bookings = useRoleView<Booking>("v_setter_recent_bookings");
-    const bottlenecks = useRoleView<Bottleneck>("v_setter_my_bottlenecks");
 
     return (
         <div className="space-y-8">
@@ -120,38 +111,7 @@ export function SetterDashboard() {
 
             <SetterTrackingDaily />
 
-            <section>
-                <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-base font-semibold text-zinc-900">
-                        <ClipboardList className="inline w-4 h-4 mr-1" />
-                        Your bottlenecks
-                    </h2>
-                </div>
-                {bottlenecks.loading ? (
-                    <LoadingState />
-                ) : bottlenecks.data && bottlenecks.data.length > 0 ? (
-                    <div className="space-y-2">
-                        {bottlenecks.data.map((b) => (
-                            <div key={b.bottleneck_id} className="bg-white border border-zinc-200 rounded-md p-3 flex items-start justify-between">
-                                <div>
-                                    <div className="text-sm font-medium text-zinc-900">{b.bottleneck_title}</div>
-                                    <div className="text-xs text-zinc-500 mt-0.5">
-                                        {b.affected_metric} • {b.status ?? "open"}
-                                    </div>
-                                </div>
-                                <span className="text-xs px-2 py-0.5 rounded bg-orange-50 text-orange-700">
-                                    Priority {b.priority_score ?? "-"}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <EmptyState
-                        title="No bottlenecks assigned"
-                        description="Bottlenecks flagged for your role will show up here when they're created."
-                    />
-                )}
-            </section>
+            <RegistrySections />
         </div>
     );
 }

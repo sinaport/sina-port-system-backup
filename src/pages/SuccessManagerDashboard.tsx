@@ -1,4 +1,5 @@
 import { Video, Clock, Users, GraduationCap, AlertTriangle } from "lucide-react";
+import { RegistrySections } from "@/components/RegistrySections";
 import { MetricCard } from "@/components/MetricCard";
 import { LoadingState, EmptyState } from "@/components/LoadingState";
 import { useRoleView } from "@/hooks/useRoleView";
@@ -197,6 +198,8 @@ export function SuccessManagerDashboard() {
                     />
                 )}
             </section>
+
+            <RegistrySections />
         </div>
     );
 }
