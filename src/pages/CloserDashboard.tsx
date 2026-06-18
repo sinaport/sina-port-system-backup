@@ -36,10 +36,8 @@ interface Payment {
 }
 
 const LABEL_BY_METRIC: Record<string, string> = {
-    revenue_today: "Revenue today",
-    revenue_week: "Revenue this week",
-    revenue_month: "Revenue this month",
-    closes_today: "Payments today",
+    revenue: "Revenue",
+    closes: "Payments",
 };
 
 const REVENUE_SPLIT_LABELS: Record<string, string> = {
@@ -68,10 +66,8 @@ function kpiFlag(key: string, value: string): "green" | "red" | "blue" {
 }
 
 const FLAG_BY_METRIC: Record<string, "green" | "red" | "blue" | null> = {
-    revenue_today: "green",
-    revenue_week: "green",
-    revenue_month: "green",
-    closes_today: "blue",
+    revenue: "green",
+    closes: "blue",
 };
 
 function formatMetricValue(metric: string, value: string): string {
@@ -81,7 +77,7 @@ function formatMetricValue(metric: string, value: string): string {
 
 export function CloserDashboard() {
     const [range, setRange] = useDateRange();
-    const metrics = useRoleView<DashboardMetric>("v_closer_dashboard");
+    const metrics = useRangeView<DashboardMetric>("fn_closer_dashboard", range);
     const upcoming = useRoleView<UpcomingCall>("v_closer_upcoming_calls");
     const payments = useRoleView<Payment>("v_closer_recent_payments");
     const revenueSplit = useRangeView<DashboardMetric>("fn_closer_revenue_split", range);

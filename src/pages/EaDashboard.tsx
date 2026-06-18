@@ -4,7 +4,7 @@ import { MetricCard } from "@/components/MetricCard";
 import { LoadingState, EmptyState } from "@/components/LoadingState";
 import { DateRangeFilter, useDateRange } from "@/components/DateRangeFilter";
 import { supabase } from "@/lib/supabase";
-import { useRoleView } from "@/hooks/useRoleView";
+import { useRoleView, useRangeView } from "@/hooks/useRoleView";
 import type { DashboardMetric } from "@/types/schema";
 import { formatCurrency, formatDateTime, formatNumber } from "@/lib/utils";
 
@@ -148,11 +148,11 @@ export function EaDashboard() {
     const tests = useRoleView<ActiveTest>("v_ea_active_tests");
     const alerts = useRoleView<Alert>("v_ea_alerts");
     const runningTests = useRoleView<RunningTest>("v_ea_running_tests");
-    const totals = useRoleView<DashboardMetric>("v_ops_totals");
     const reps = useRoleView<RepPerf>("v_setter_tracking");
 
-    // All-department metrics are date-filterable (feedback #1): fetched via RPC per range.
+    // All-department metrics + activity totals are date-filterable (feedback #1).
     const [range, setRange] = useDateRange();
+    const totals = useRangeView<DashboardMetric>("fn_ops_totals", range);
     const [opsData, setOpsData] = useState<OpsMetric[] | null>(null);
     const [opsLoading, setOpsLoading] = useState(true);
     useEffect(() => {
@@ -222,6 +222,9 @@ export function EaDashboard() {
                 </section>
             )}
 
+            <h2 className="text-base font-semibold text-zinc-900">
+                Live status <span className="text-xs font-normal text-zinc-400">· current snapshot (not date-filtered)</span>
+            </h2>
             {metrics.loading ? (
                 <LoadingState label="Loading metrics..." />
             ) : (
@@ -238,12 +241,19 @@ export function EaDashboard() {
                 </div>
             )}
 
-            {/* Data-source totals */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {TOTALS_ORDER.map((key) => (
-                    <MetricCard key={key} label={TOTALS_LABEL[key]} value={formatNumber(totalBy[key] ?? "0")} flag="blue" icon={<Activity className="w-5 h-5" />} />
-                ))}
-            </div>
+            {/* Activity totals - date-filtered */}
+            <h2 className="text-base font-semibold text-zinc-900">
+                Activity <span className="text-xs font-normal text-zinc-400">· {range.label}</span>
+            </h2>
+            {totals.loading ? (
+                <LoadingState />
+            ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {TOTALS_ORDER.map((key) => (
+                        <MetricCard key={key} label={TOTALS_LABEL[key]} value={formatNumber(totalBy[key] ?? "0")} flag="blue" icon={<Activity className="w-5 h-5" />} />
+                    ))}
+                </div>
+            )}
 
             {/* All-department metrics, grouped (Leads / Calendly / Sales). Range = filter in header. */}
             <h2 className="text-base font-semibold text-zinc-900">
