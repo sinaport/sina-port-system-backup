@@ -14,6 +14,7 @@ import { RegistrySubmit } from "@/pages/RegistrySubmit";
 import { TestingForm } from "@/pages/TestingForm";
 import { DataBrowser } from "@/pages/DataBrowser";
 import { TeamRegistry } from "@/pages/TeamRegistry";
+import { InputForm } from "@/pages/InputForm";
 import { Account } from "@/pages/Account";
 
 function DefaultRedirect() {
@@ -99,6 +100,13 @@ export default function App() {
                             <Route path="/kpis" element={<KpiDictionary />} />
                             <Route path="/data" element={<DataBrowser />} />
                             <Route path="/team/new" element={<TeamRegistry />} />
+                            <Route path="/inputs/metric" element={<InputForm kind="metric" />} />
+                            <Route path="/inputs/kpi" element={<InputForm kind="kpi" />} />
+                            <Route path="/inputs/variables" element={<InputForm kind="variables" />} />
+                            <Route path="/inputs/program" element={<InputForm kind="program" />} />
+                            <Route path="/inputs/link" element={<InputForm kind="link" />} />
+                            <Route path="/inputs/sop" element={<InputForm kind="sop" />} />
+                            <Route path="/inputs/script" element={<InputForm kind="script" />} />
                         </Route>
                         {/* Common - any authenticated team member */}
                         <Route path="/log/bottleneck" element={<RegistrySubmit kind="bottleneck" />} />
