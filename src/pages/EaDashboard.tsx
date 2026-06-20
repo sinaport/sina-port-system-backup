@@ -97,6 +97,15 @@ interface RepPerf {
     answer_rate_pct: number;
 }
 
+// CAC per ad creative (HTO buyers only). Attribution = payment-HTO buyer -> Hyros first-click ad.
+interface CacCreative {
+    creative: string;
+    ad_id: string | null;
+    spend_eur: number | null;
+    hto_buyers: number;
+    cac_eur: number | null;
+}
+
 const TOTALS_LABEL: Record<string, string> = {
     dials: "Dials",
     calendly_events: "Calendly events",
@@ -182,6 +191,7 @@ export function EaDashboard() {
     const tests = useRoleView<ActiveTest>("v_ea_active_tests");
     const alerts = useRoleView<Alert>("v_ea_alerts");
     const runningTests = useRoleView<RunningTest>("v_ea_running_tests");
+    const cac = useRoleView<CacCreative>("v_cac_per_creative");
 
     // All-department metrics + activity totals + rep performance are date-filterable (feedback #1).
     const [range, setRange] = useDateRange();
@@ -212,6 +222,12 @@ export function EaDashboard() {
         rate: Number(r.answer_rate_pct),
     })).sort((a, b) => b.total - a.total);
     const maxBar = Math.max(1, ...repRows.map((r) => r.total));
+
+    const cacRows = [...(cac.data ?? [])].sort((a, b) => (Number(a.cac_eur ?? Infinity)) - (Number(b.cac_eur ?? Infinity)));
+    const cacWithVal = cacRows.filter((c) => c.cac_eur != null);
+    const cacUnder = cacWithVal.filter((c) => Number(c.cac_eur) < 1000).length;
+    const cacOver = cacWithVal.filter((c) => Number(c.cac_eur) >= 1000).length;
+    const cacBuyers = cacRows.reduce((s, c) => s + Number(c.hto_buyers || 0), 0);
 
     return (
         <div className="space-y-8">
@@ -319,6 +335,53 @@ export function EaDashboard() {
                     );
                 })
             )}
+
+            {/* CAC per ad creative (HTO buyers only) - her Q4 answer */}
+            <section>
+                <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-base font-semibold text-zinc-900">CAC by ad creative <span className="text-xs font-normal text-zinc-400">· HTO buyers only</span></h2>
+                    <div className="text-xs text-zinc-500">{cacWithVal.length} creatives · {cacBuyers} attributed buyers</div>
+                </div>
+                {cac.loading ? (
+                    <LoadingState />
+                ) : cacRows.length > 0 ? (
+                    <>
+                        <div className="grid grid-cols-2 sm:grid-cols-2 gap-4 mb-3">
+                            <MetricCard label="Creatives, CAC < €1k" value={formatNumber(String(cacUnder))} flag="green" formula="Ad creatives whose spend ÷ HTO buyers from that creative is under €1,000." />
+                            <MetricCard label="Creatives, CAC ≥ €1k" value={formatNumber(String(cacOver))} flag="red" formula="Ad creatives whose spend ÷ HTO buyers from that creative is €1,000 or more." />
+                        </div>
+                        <p className="text-xs text-zinc-400 mb-2">
+                            CAC = ad creative spend ÷ HTO buyers attributed to it. Covers only HTO buyers we can trace to a specific ad creative via Hyros first-click ({cacBuyers} buyers); organic and untracked buyers are excluded, so this is a tracked sample, not the full book. The blended CAC above is the all-up number.
+                        </p>
+                        <div className="bg-white border border-zinc-200 rounded-md overflow-x-auto">
+                            <table className="w-full text-sm">
+                                <thead className="bg-zinc-50 text-zinc-500 text-xs uppercase text-left">
+                                    <tr>
+                                        <th className="px-4 py-2">Ad creative</th>
+                                        <th className="px-4 py-2">Spend</th>
+                                        <th className="px-4 py-2">HTO buyers</th>
+                                        <th className="px-4 py-2">CAC</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-zinc-100">
+                                    {cacRows.slice(0, 20).map((c, i) => (
+                                        <tr key={c.ad_id ?? i}>
+                                            <td className="px-4 py-2 text-zinc-800 max-w-md truncate">{c.creative}</td>
+                                            <td className="px-4 py-2 text-zinc-600">{c.spend_eur != null ? formatCurrency(String(c.spend_eur)) : "—"}</td>
+                                            <td className="px-4 py-2 text-zinc-700">{c.hto_buyers}</td>
+                                            <td className={`px-4 py-2 font-medium ${c.cac_eur == null ? "text-zinc-400" : Number(c.cac_eur) < 1000 ? "text-emerald-600" : "text-red-600"}`}>
+                                                {c.cac_eur != null ? formatCurrency(String(c.cac_eur)) : "no spend match"}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </>
+                ) : (
+                    <EmptyState title="No attributed creatives yet" description="HTO buyers traceable to an ad creative will appear here as Hyros attribution and ad spend line up." />
+                )}
+            </section>
 
             {/* Rep performance (answered vs not answered) */}
             <section>
