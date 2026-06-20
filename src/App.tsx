@@ -101,7 +101,6 @@ export default function App() {
                             <Route path="/data" element={<DataBrowser />} />
                             <Route path="/team/new" element={<TeamRegistry />} />
                             <Route path="/inputs/metric" element={<InputForm kind="metric" />} />
-                            <Route path="/inputs/kpi" element={<InputForm kind="kpi" />} />
                             <Route path="/inputs/variables" element={<InputForm kind="variables" />} />
                             <Route path="/inputs/program" element={<InputForm kind="program" />} />
                             <Route path="/inputs/link" element={<InputForm kind="link" />} />

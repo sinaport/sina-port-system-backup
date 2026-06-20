@@ -72,6 +72,7 @@ const TABLES: TableDef[] = [
     { key: "business_dictionary", label: "Business Dictionary", view: "v_data_business_dictionary", searchCols: ["section", "item", "detail"] },
     { key: "customer_avatar", label: "Customer Avatar", view: "v_data_customer_avatar", searchCols: ["attribute"] },
     { key: "cac_creative", label: "CAC by Creative", view: "v_cac_per_creative", searchCols: ["creative", "ad_id"] },
+    { key: "input_forms", label: "Submitted Forms", view: "v_data_input_forms", searchCols: ["form_type", "title", "fields", "submitted_by"] },
 ];
 
 const PAGE_SIZE = 50;

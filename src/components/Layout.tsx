@@ -17,7 +17,6 @@ const ADMIN_INPUT_FORMS: NavItem[] = [
     { label: "Add team member", to: "/team/new", icon: UserPlus },
     { label: "Submit a test", to: "/testing", icon: Beaker },
     { label: "New Metric", to: "/inputs/metric", icon: Plus },
-    { label: "New KPI", to: "/inputs/kpi", icon: GaugeCircle },
     { label: "New Variable", to: "/inputs/variables", icon: FlaskConical },
     { label: "New Program", to: "/inputs/program", icon: FileText },
     { label: "New Link", to: "/inputs/link", icon: Link2 },
