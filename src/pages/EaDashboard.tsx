@@ -77,6 +77,10 @@ const SOURCE_LABELS: Record<string, string> = {
     airtable_leads: "Airtable Leads (Clickfunnels opt-ins)",
 };
 
+// Backfill sources are refreshed on a slower cadence (not the 30-min live cron), so they show a
+// neutral "Backfill" status rather than a misleading red "Stale".
+const BACKFILL_SOURCES = new Set(["live_meta_ad_insights", "airtable_leads"]);
+
 const ICON_BY_METRIC: Record<string, React.ReactNode> = {
     open_bottlenecks: <AlertTriangle className="w-5 h-5" />,
     active_tests: <FlaskConical className="w-5 h-5" />,
@@ -470,22 +474,21 @@ export function EaDashboard() {
                             </thead>
                             <tbody className="divide-y divide-zinc-100">
                                 {(ingestion.data ?? []).map((i) => {
+                                    const backfill = BACKFILL_SOURCES.has(i.source);
                                     const stale = i.minutes_stale > 90;
+                                    const status = backfill ? "Backfill" : stale ? "Stale" : "Fresh";
+                                    const statusClass = backfill
+                                        ? "bg-zinc-100 text-zinc-600"
+                                        : stale
+                                          ? "bg-red-50 text-red-700"
+                                          : "bg-emerald-50 text-emerald-700";
                                     return (
                                         <tr key={i.source}>
                                             <td className="px-4 py-2 text-zinc-700">{SOURCE_LABELS[i.source] ?? i.source}</td>
                                             <td className="px-4 py-2 text-zinc-900">{formatNumber(i.total_rows)}</td>
                                             <td className="px-4 py-2 text-zinc-600">{formatDateTime(i.last_ingest_at)}</td>
                                             <td className="px-4 py-2">
-                                                <span
-                                                    className={`text-xs px-2 py-0.5 rounded ${
-                                                        stale
-                                                            ? "bg-red-50 text-red-700"
-                                                            : "bg-emerald-50 text-emerald-700"
-                                                    }`}
-                                                >
-                                                    {stale ? "Stale" : "Fresh"}
-                                                </span>
+                                                <span className={`text-xs px-2 py-0.5 rounded ${statusClass}`}>{status}</span>
                                             </td>
                                         </tr>
                                     );
