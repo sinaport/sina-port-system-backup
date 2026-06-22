@@ -105,13 +105,17 @@ export function DataBrowser() {
         const handle = setTimeout(() => {
             const from = page * PAGE_SIZE;
             const to = from + PAGE_SIZE - 1;
-            const term = search.trim().replace(/[,()*]/g, " ").trim();
+            const term = search.trim();
             let query = supabase
                 .schema("engine" as never)
                 .from(tableDef.view)
                 .select("*", { count: "exact" });
             if (term) {
-                query = query.or(tableDef.searchCols.map((c) => `${c}.ilike.*${term}*`).join(","));
+                // Build a wildcard pattern that tolerates spaces (PostgREST .or() breaks on a literal
+                // space in the value): "Doreen Herzog" -> *Doreen*Herzog*. Strip PostgREST delimiters.
+                const words = term.replace(/[,()*%]/g, " ").split(/\s+/).filter(Boolean);
+                const pat = "*" + words.join("*") + "*";
+                query = query.or(tableDef.searchCols.map((c) => `${c}.ilike.${pat}`).join(","));
             }
             void query.range(from, to).then(({ data, count, error }) => {
                 if (cancelled) return;
