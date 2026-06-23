@@ -247,6 +247,17 @@ export function EaDashboard() {
     })).sort((a, b) => b.total - a.total);
     const maxBar = Math.max(1, ...repRows.map((r) => r.total));
 
+    // Closer rep bars: held (green) vs not held / no-show (red), total = sets.
+    const closerRows = [...(closerReps.data ?? [])]
+        .map((c) => ({ rep: c.closer, held: Number(c.held), notHeld: Math.max(0, Number(c.sets) - Number(c.held)), total: Number(c.sets) }))
+        .sort((a, b) => b.total - a.total);
+    const maxCloserBar = Math.max(1, ...closerRows.map((c) => c.total));
+    // Delivery rep bars: onboarding (green) vs offboarded (slate), total = mentees.
+    const smRows = [...(smReps.data ?? [])]
+        .map((s) => ({ rep: s.success_manager, onboarding: Number(s.onboarding), offboarded: Number(s.offboarded), total: Number(s.mentees) }))
+        .sort((a, b) => b.total - a.total);
+    const maxSmBar = Math.max(1, ...smRows.map((s) => s.total));
+
     const cacRows = [...(cac.data ?? [])].sort((a, b) => (Number(a.cac_eur ?? Infinity)) - (Number(b.cac_eur ?? Infinity)));
     const cacWithVal = cacRows.filter((c) => c.cac_eur != null);
     const cacUnder = cacWithVal.filter((c) => Number(c.cac_eur) < 1000).length;
@@ -469,12 +480,39 @@ export function EaDashboard() {
                 )}
             </section>
 
-            {/* Closer rep performance - all-department rep view (R5 #5) */}
+            {/* Closer rep performance - bar chart matching Setter (R5 #5) */}
             <section>
                 <h2 className="text-base font-semibold text-zinc-900 mb-3">Closer rep performance <span className="text-xs font-normal text-zinc-400">· Closing calls (Calendly)</span></h2>
                 {closerReps.loading ? (
                     <LoadingState />
-                ) : (closerReps.data ?? []).length > 0 ? (
+                ) : closerRows.length > 0 ? (
+                    <div className="bg-white border border-zinc-200 rounded-lg p-4 space-y-2">
+                        {closerRows.slice(0, 15).map((r) => (
+                            <div key={r.rep} className="flex items-center gap-3 text-xs">
+                                <div className="w-32 truncate text-zinc-700">{r.rep}</div>
+                                <div className="flex-1 flex h-4 rounded overflow-hidden bg-zinc-100">
+                                    <div className="bg-emerald-500" style={{ width: `${(r.held / maxCloserBar) * 100}%` }} title={`Held ${r.held}`} />
+                                    <div className="bg-red-400" style={{ width: `${(r.notHeld / maxCloserBar) * 100}%` }} title={`Not held ${r.notHeld}`} />
+                                </div>
+                                <div className="w-10 text-right text-zinc-500">{r.total}</div>
+                            </div>
+                        ))}
+                        <div className="flex gap-4 text-xs text-zinc-500 pt-1">
+                            <span><span className="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-1" />Held</span>
+                            <span><span className="inline-block w-2 h-2 rounded-full bg-red-400 mr-1" />Not held</span>
+                        </div>
+                    </div>
+                ) : (
+                    <EmptyState title="No closing-call data yet" description="Closer activity will appear here." />
+                )}
+            </section>
+
+            {/* Closer tracking table (matches Setter answer-rate table) */}
+            <section>
+                <h2 className="text-base font-semibold text-zinc-900 mb-3">Closer tracking</h2>
+                {closerReps.loading ? (
+                    <LoadingState />
+                ) : closerRows.length > 0 ? (
                     <div className="bg-white border border-zinc-200 rounded-md overflow-hidden">
                         <table className="w-full text-sm">
                             <thead className="bg-zinc-50 text-xs text-zinc-500 uppercase">
@@ -482,32 +520,59 @@ export function EaDashboard() {
                                     <th className="px-4 py-2 text-left">Closer</th>
                                     <th className="px-4 py-2 text-left">Sets</th>
                                     <th className="px-4 py-2 text-left">Held</th>
-                                    <th className="px-4 py-2 text-left">Upcoming</th>
+                                    <th className="px-4 py-2 text-left">Not held</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-zinc-100">
-                                {[...(closerReps.data ?? [])].sort((a, b) => b.sets - a.sets).map((c) => (
-                                    <tr key={c.closer}>
-                                        <td className="px-4 py-2 font-medium text-zinc-900">{c.closer}</td>
-                                        <td className="px-4 py-2 text-zinc-700">{c.sets}</td>
+                                {closerRows.map((c) => (
+                                    <tr key={c.rep}>
+                                        <td className="px-4 py-2 font-medium text-zinc-900">{c.rep}</td>
+                                        <td className="px-4 py-2 text-zinc-700">{c.total}</td>
                                         <td className="px-4 py-2 text-emerald-700">{c.held}</td>
-                                        <td className="px-4 py-2 text-zinc-500">{c.upcoming}</td>
+                                        <td className="px-4 py-2 text-red-600">{c.notHeld}</td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
                     </div>
                 ) : (
-                    <EmptyState title="No closing-call data yet" description="Closer activity will appear here." />
+                    <EmptyState title="No closing-call data yet" description="Closer tracking will appear here." />
                 )}
             </section>
 
-            {/* Delivery (Success Manager) rep performance - all-department rep view (R5 #5) */}
+            {/* Delivery (Success Manager) rep performance - bar chart matching Setter (R5 #5) */}
             <section>
                 <h2 className="text-base font-semibold text-zinc-900 mb-3">Delivery rep performance <span className="text-xs font-normal text-zinc-400">· Mentees per Success Manager</span></h2>
                 {smReps.loading ? (
                     <LoadingState />
-                ) : (smReps.data ?? []).length > 0 ? (
+                ) : smRows.length > 0 ? (
+                    <div className="bg-white border border-zinc-200 rounded-lg p-4 space-y-2">
+                        {smRows.slice(0, 15).map((r) => (
+                            <div key={r.rep} className="flex items-center gap-3 text-xs">
+                                <div className="w-32 truncate text-zinc-700">{r.rep}</div>
+                                <div className="flex-1 flex h-4 rounded overflow-hidden bg-zinc-100">
+                                    <div className="bg-emerald-500" style={{ width: `${(r.onboarding / maxSmBar) * 100}%` }} title={`Onboarding ${r.onboarding}`} />
+                                    <div className="bg-slate-400" style={{ width: `${(r.offboarded / maxSmBar) * 100}%` }} title={`Offboarded ${r.offboarded}`} />
+                                </div>
+                                <div className="w-10 text-right text-zinc-500">{r.total}</div>
+                            </div>
+                        ))}
+                        <div className="flex gap-4 text-xs text-zinc-500 pt-1">
+                            <span><span className="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-1" />Onboarding</span>
+                            <span><span className="inline-block w-2 h-2 rounded-full bg-slate-400 mr-1" />Offboarded</span>
+                        </div>
+                    </div>
+                ) : (
+                    <EmptyState title="No delivery data yet" description="Success Manager mentee load will appear here." />
+                )}
+            </section>
+
+            {/* Delivery tracking table (matches Setter answer-rate table) */}
+            <section>
+                <h2 className="text-base font-semibold text-zinc-900 mb-3">Delivery tracking</h2>
+                {smReps.loading ? (
+                    <LoadingState />
+                ) : smRows.length > 0 ? (
                     <div className="bg-white border border-zinc-200 rounded-md overflow-hidden">
                         <table className="w-full text-sm">
                             <thead className="bg-zinc-50 text-xs text-zinc-500 uppercase">
@@ -519,10 +584,10 @@ export function EaDashboard() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-zinc-100">
-                                {(smReps.data ?? []).map((s) => (
-                                    <tr key={s.success_manager}>
-                                        <td className="px-4 py-2 font-medium text-zinc-900">{s.success_manager}</td>
-                                        <td className="px-4 py-2 text-zinc-700">{s.mentees}</td>
+                                {smRows.map((s) => (
+                                    <tr key={s.rep}>
+                                        <td className="px-4 py-2 font-medium text-zinc-900">{s.rep}</td>
+                                        <td className="px-4 py-2 text-zinc-700">{s.total}</td>
                                         <td className="px-4 py-2 text-emerald-700">{s.onboarding}</td>
                                         <td className="px-4 py-2 text-zinc-500">{s.offboarded}</td>
                                     </tr>
@@ -531,7 +596,7 @@ export function EaDashboard() {
                         </table>
                     </div>
                 ) : (
-                    <EmptyState title="No delivery data yet" description="Success Manager mentee load will appear here." />
+                    <EmptyState title="No delivery data yet" description="Success Manager tracking will appear here." />
                 )}
             </section>
 
