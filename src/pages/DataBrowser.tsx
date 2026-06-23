@@ -71,15 +71,25 @@ const TABLES: TableDef[] = [
     { key: "lib_delivery", label: "Library: Delivery", view: "v_data_lib_delivery", searchCols: ["id_lead", "status"] },
     { key: "business_dictionary", label: "Business Dictionary", view: "v_data_business_dictionary", searchCols: ["section", "item", "detail"] },
     { key: "customer_avatar", label: "Customer Avatar", view: "v_data_customer_avatar", searchCols: ["attribute"] },
-    { key: "cac_creative", label: "CAC by Creative", view: "v_cac_per_creative", searchCols: ["creative", "ad_id"] },
+    { key: "cac_creative", label: "CAC by Creative", view: "v_cac_per_creative", searchCols: ["creative", "ad_id", "campaign", "ad_set"], columnLabels: {
+        creative: "Ad Creative", ad_id: "Creative / Ad ID", ad_account: "Ads Account", ad_set: "Ad Set",
+        campaign: "Campaign", meta_status: "Meta Status", spend_eur: "Amount Spent", hto_buyers: "Deals (HTO buyers)",
+        cash_collected_eur: "Cash Collected", cac_eur: "CAC" } },
     { key: "input_forms", label: "Submitted Forms", view: "v_data_input_forms", searchCols: ["form_type", "title", "fields", "submitted_by"] },
 ];
 
 const PAGE_SIZE = 50;
 
-function formatVal(v: unknown): string {
+// Columns that hold EUR amounts get a euro symbol + thousands separators (R5 #4: match her sheet).
+const CURRENCY_COL = /(_eur$|^spend$|^cac$|^cash|collected)/i;
+
+function formatVal(v: unknown, col?: string): string {
     if (v === null || v === undefined) return "-";
     if (typeof v === "boolean") return v ? "Yes" : "No";
+    if (col && CURRENCY_COL.test(col)) {
+        const n = Number(v);
+        if (Number.isFinite(n)) return "€" + n.toLocaleString(undefined, { maximumFractionDigits: 0 });
+    }
     if (typeof v === "string" && /^\d{4}-\d{2}-\d{2}T/.test(v)) {
         return new Date(v).toLocaleString();
     }
@@ -219,7 +229,7 @@ export function DataBrowser() {
                             {filtered.map((r, i) => (
                                 <tr key={i} className="border-t border-zinc-100 hover:bg-zinc-50">
                                     {columns.map((c) => (
-                                        <td key={c} className="px-3 py-2 text-zinc-700 max-w-xs truncate">{formatVal(r[c])}</td>
+                                        <td key={c} className="px-3 py-2 text-zinc-700 max-w-xs truncate">{formatVal(r[c], c)}</td>
                                     ))}
                                 </tr>
                             ))}

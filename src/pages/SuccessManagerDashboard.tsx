@@ -19,6 +19,7 @@ interface Meeting {
 
 interface Mentee {
     row_id: number;
+    lead_id: string | null;
     id_lead: string | null;
     status: string | null;
     date_opted_in: string | null;
@@ -107,6 +108,7 @@ export function SuccessManagerDashboard() {
                             <thead className="bg-zinc-50 text-xs text-zinc-500 uppercase tracking-wide">
                                 <tr>
                                     <th className="px-3 py-2 text-left">Lead</th>
+                                    <th className="px-3 py-2 text-left">Lead ID</th>
                                     <th className="px-3 py-2 text-left">Status</th>
                                     <th className="px-3 py-2 text-left">Opted in</th>
                                     <th className="px-3 py-2 text-left">Closed</th>
@@ -123,6 +125,7 @@ export function SuccessManagerDashboard() {
                                     return (
                                         <tr key={m.row_id} className="border-t border-zinc-100 hover:bg-zinc-50">
                                             <td className="px-3 py-2 font-medium text-zinc-900">{m.id_lead ?? "-"}</td>
+                                            <td className="px-3 py-2 font-mono text-xs text-zinc-500">{m.lead_id ?? "-"}</td>
                                             <td className="px-3 py-2 text-zinc-700">{m.status ?? "-"}</td>
                                             <td className="px-3 py-2 text-zinc-600 text-xs">{m.date_opted_in ? formatDateTime(m.date_opted_in).split(" ")[0] : "-"}</td>
                                             <td className="px-3 py-2 text-zinc-600 text-xs">{m.date_closed ? formatDateTime(m.date_closed).split(" ")[0] : "-"}</td>

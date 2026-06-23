@@ -103,6 +103,22 @@ interface RepPerf {
     answer_rate_pct: number;
 }
 
+// Closer rep performance (per closer): closing calls set / held / upcoming.
+interface CloserRep {
+    closer: string;
+    sets: number;
+    held: number;
+    upcoming: number;
+}
+
+// Delivery rep performance (per Success Manager): mentees managed.
+interface SmRep {
+    success_manager: string;
+    mentees: number;
+    onboarding: number;
+    offboarded: number;
+}
+
 // CAC per ad creative (HTO buyers only). Attribution = payment-HTO buyer -> Hyros first-click ad.
 interface CacCreative {
     creative: string;
@@ -202,6 +218,8 @@ export function EaDashboard() {
     // All-department metrics + activity totals + rep performance are date-filterable (feedback #1).
     const [range, setRange] = useDateRange();
     const reps = useRangeView<RepPerf>("fn_setter_rep", range);
+    const closerReps = useRangeView<CloserRep>("fn_closer_tracking", range);
+    const smReps = useRangeView<SmRep>("fn_sm_rep", range);
     const totals = useRangeView<DashboardMetric>("fn_ops_totals", range);
     const [opsData, setOpsData] = useState<OpsMetric[] | null>(null);
     const [opsLoading, setOpsLoading] = useState(true);
@@ -448,6 +466,72 @@ export function EaDashboard() {
                     </div>
                 ) : (
                     <EmptyState title="No call data yet" description="Answer rates will appear here." />
+                )}
+            </section>
+
+            {/* Closer rep performance - all-department rep view (R5 #5) */}
+            <section>
+                <h2 className="text-base font-semibold text-zinc-900 mb-3">Closer rep performance <span className="text-xs font-normal text-zinc-400">· Closing calls (Calendly)</span></h2>
+                {closerReps.loading ? (
+                    <LoadingState />
+                ) : (closerReps.data ?? []).length > 0 ? (
+                    <div className="bg-white border border-zinc-200 rounded-md overflow-hidden">
+                        <table className="w-full text-sm">
+                            <thead className="bg-zinc-50 text-xs text-zinc-500 uppercase">
+                                <tr>
+                                    <th className="px-4 py-2 text-left">Closer</th>
+                                    <th className="px-4 py-2 text-left">Sets</th>
+                                    <th className="px-4 py-2 text-left">Held</th>
+                                    <th className="px-4 py-2 text-left">Upcoming</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-zinc-100">
+                                {[...(closerReps.data ?? [])].sort((a, b) => b.sets - a.sets).map((c) => (
+                                    <tr key={c.closer}>
+                                        <td className="px-4 py-2 font-medium text-zinc-900">{c.closer}</td>
+                                        <td className="px-4 py-2 text-zinc-700">{c.sets}</td>
+                                        <td className="px-4 py-2 text-emerald-700">{c.held}</td>
+                                        <td className="px-4 py-2 text-zinc-500">{c.upcoming}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                ) : (
+                    <EmptyState title="No closing-call data yet" description="Closer activity will appear here." />
+                )}
+            </section>
+
+            {/* Delivery (Success Manager) rep performance - all-department rep view (R5 #5) */}
+            <section>
+                <h2 className="text-base font-semibold text-zinc-900 mb-3">Delivery rep performance <span className="text-xs font-normal text-zinc-400">· Mentees per Success Manager</span></h2>
+                {smReps.loading ? (
+                    <LoadingState />
+                ) : (smReps.data ?? []).length > 0 ? (
+                    <div className="bg-white border border-zinc-200 rounded-md overflow-hidden">
+                        <table className="w-full text-sm">
+                            <thead className="bg-zinc-50 text-xs text-zinc-500 uppercase">
+                                <tr>
+                                    <th className="px-4 py-2 text-left">Success Manager</th>
+                                    <th className="px-4 py-2 text-left">Mentees</th>
+                                    <th className="px-4 py-2 text-left">Onboarding</th>
+                                    <th className="px-4 py-2 text-left">Offboarded</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-zinc-100">
+                                {(smReps.data ?? []).map((s) => (
+                                    <tr key={s.success_manager}>
+                                        <td className="px-4 py-2 font-medium text-zinc-900">{s.success_manager}</td>
+                                        <td className="px-4 py-2 text-zinc-700">{s.mentees}</td>
+                                        <td className="px-4 py-2 text-emerald-700">{s.onboarding}</td>
+                                        <td className="px-4 py-2 text-zinc-500">{s.offboarded}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                ) : (
+                    <EmptyState title="No delivery data yet" description="Success Manager mentee load will appear here." />
                 )}
             </section>
 
