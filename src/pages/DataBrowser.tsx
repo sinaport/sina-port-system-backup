@@ -104,21 +104,11 @@ export function DataBrowser() {
     const [page, setPage] = useState(0);
     const [total, setTotal] = useState<number | null>(null);
     const [search, setSearch] = useState("");
-    // Lead Journey "hide empty columns": data-driven list of columns that have data in >=1 lead.
+    // Lead Journey "hide empty columns": hides columns that are empty across the rows CURRENTLY shown,
+    // so a single-lead search shows only that lead's filled columns (not every column any lead fills).
     const [hideEmpty, setHideEmpty] = useState(true);
-    const [populatedCols, setPopulatedCols] = useState<string[] | null>(null);
 
     const tableDef = useMemo(() => TABLES.find((t) => t.key === active)!, [active]);
-
-    // Fetch the populated-column list once when the Lead Journey tab is active.
-    useEffect(() => {
-        if (active !== "leads" || populatedCols !== null) return;
-        let cancelled = false;
-        void supabase.schema("engine" as never).rpc("fn_lead_journey_populated_columns").then(({ data }) => {
-            if (!cancelled && Array.isArray(data)) setPopulatedCols(data as string[]);
-        });
-        return () => { cancelled = true; };
-    }, [active, populatedCols]);
 
     useEffect(() => {
         let cancelled = false;
@@ -182,9 +172,12 @@ export function DataBrowser() {
     };
 
     const allColumns = rows.length > 0 ? Object.keys(rows[0]) : [];
-    // On Lead Journey, optionally hide columns that are empty across ALL leads (data-driven).
-    const leadJourneyHiding = active === "leads" && hideEmpty && populatedCols !== null;
-    const columns = leadJourneyHiding ? allColumns.filter((c) => populatedCols!.includes(c)) : allColumns;
+    // On Lead Journey, hide columns that are empty across the currently-shown rows.
+    const isEmptyVal = (v: unknown) => v === null || v === undefined || String(v).trim() === "";
+    const leadJourneyHiding = active === "leads" && hideEmpty && rows.length > 0;
+    const columns = leadJourneyHiding
+        ? allColumns.filter((c) => rows.some((r) => !isEmptyVal(r[c])))
+        : allColumns;
     const hiddenCount = leadJourneyHiding ? allColumns.length - columns.length : 0;
     const filtered = rows; // filtering now happens server-side
 
