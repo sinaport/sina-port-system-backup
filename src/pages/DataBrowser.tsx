@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Database, Search } from "lucide-react";
+import { Database, Search, X, ExternalLink } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { LoadingState, EmptyState } from "@/components/LoadingState";
 
@@ -84,6 +84,14 @@ const TABLES: TableDef[] = [
 
 const PAGE_SIZE = 50;
 
+// Reference docs (SOPs, scripts) are formatted Google Docs - tables, colors, callout cards.
+// We render the live doc in-app via its read-only /preview so the full design shows, always current.
+const GDOC_RE = /docs\.google\.com\/document\/d\/([a-zA-Z0-9_-]+)/;
+function gdocPreview(url: string): string | null {
+    const m = url.match(GDOC_RE);
+    return m ? `https://docs.google.com/document/d/${m[1]}/preview` : null;
+}
+
 // Columns that hold EUR amounts get a euro symbol + thousands separators (R5 #4: match her sheet).
 const CURRENCY_COL = /(_eur$|^spend$|^cac$|^cash|collected)/i;
 
@@ -113,6 +121,7 @@ export function DataBrowser() {
     // Assigned Closer stay visible (with "-" where a given lead lacks them), like a normal spreadsheet.
     const [hideEmpty, setHideEmpty] = useState(true);
     const [populatedCols, setPopulatedCols] = useState<Record<string, string[]>>({});
+    const [viewer, setViewer] = useState<{ url: string; title: string } | null>(null);
 
     const tableDef = useMemo(() => TABLES.find((t) => t.key === active)!, [active]);
     // Lead-journey-style tabs that get the "hide empty columns" toggle (both share the 106-col schema).
@@ -264,9 +273,22 @@ export function DataBrowser() {
                         <tbody>
                             {filtered.map((r, i) => (
                                 <tr key={i} className="border-t border-zinc-100 hover:bg-zinc-50">
-                                    {columns.map((c) => (
-                                        <td key={c} className="px-3 py-2 text-zinc-700 max-w-xs truncate">{formatVal(r[c], c)}</td>
-                                    ))}
+                                    {columns.map((c) => {
+                                        const v = r[c];
+                                        const isUrl = typeof v === "string" && /^https?:\/\//.test(v);
+                                        const preview = isUrl ? gdocPreview(v as string) : null;
+                                        return (
+                                            <td key={c} className="px-3 py-2 text-zinc-700 max-w-xs truncate">
+                                                {preview ? (
+                                                    <button onClick={() => setViewer({ url: preview, title: String(r["name"] ?? "Document") })} className="text-blue-600 hover:underline font-medium">View</button>
+                                                ) : isUrl ? (
+                                                    <a href={v as string} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{(v as string).replace(/^https?:\/\//, "").slice(0, 38)}</a>
+                                                ) : (
+                                                    formatVal(v, c)
+                                                )}
+                                            </td>
+                                        );
+                                    })}
                                 </tr>
                             ))}
                         </tbody>
@@ -294,6 +316,26 @@ export function DataBrowser() {
                     >
                         Next
                     </button>
+                </div>
+            )}
+
+            {/* In-app document viewer - renders the live formatted SOP/script (tables, callouts, colors). */}
+            {viewer && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setViewer(null)}>
+                    <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-200">
+                            <h3 className="text-sm font-semibold text-zinc-900 truncate">{viewer.title}</h3>
+                            <div className="flex items-center gap-4">
+                                <a href={viewer.url.replace("/preview", "/edit")} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+                                    <ExternalLink className="w-3 h-3" /> Open in Docs
+                                </a>
+                                <button onClick={() => setViewer(null)} className="text-zinc-400 hover:text-zinc-700" aria-label="Close">
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+                        </div>
+                        <iframe src={viewer.url} title={viewer.title} className="flex-1 w-full rounded-b-lg" />
+                    </div>
                 </div>
             )}
         </div>
