@@ -49,6 +49,27 @@ function groupProb(rows: Row[]): number | null {
 const sumSpend = (rows: Row[]) => rows.reduce((s, r) => s + (r.spend_eur ?? 0), 0);
 const sumBuyers = (rows: Row[]) => rows.reduce((s, r) => s + (r.hto_buyers ?? 0), 0);
 
+// aggregate CAC = total spend / total buyers
+function groupCac(rows: Row[]): number | null {
+  const buyers = sumBuyers(rows);
+  return buyers > 0 ? Math.round(sumSpend(rows) / buyers) : null;
+}
+// spend-weighted average confidence for a group
+function groupConf(rows: Row[]): number | null {
+  const scored = rows.filter((r) => r.confidence != null);
+  if (!scored.length) return null;
+  const totalSpend = scored.reduce((s, r) => s + (r.spend_eur ?? 0), 0);
+  if (totalSpend === 0) return Math.round(scored.reduce((s, r) => s + (r.confidence ?? 0), 0) / scored.length);
+  return Math.round(scored.reduce((s, r) => s + (r.confidence ?? 0) * (r.spend_eur ?? 0), 0) / totalSpend);
+}
+// how many creatives in the group have an actionable recommendation
+function groupFlagged(rows: Row[]): number {
+  return rows.filter(
+    (r) => r.decision && (r.decision.startsWith("Increase") || r.decision.startsWith("Reduce") ||
+      r.decision === "Graduate" || r.decision === "Replace" || r.decision === "Exit")
+  ).length;
+}
+
 export function MediaBuyingDashboard() {
   const { data, loading, error } = useRoleView<Row>("v_media_buying");
   const [open, setOpen] = useState<Record<string, boolean>>({});
@@ -106,10 +127,14 @@ export function MediaBuyingDashboard() {
                     </td>
                     <td className="p-3 text-right">{eur(sumSpend(rows))}</td>
                     <td className="p-3 text-right">{sumBuyers(rows)}</td>
-                    <td className="p-3 text-right">-</td>
+                    <td className="p-3 text-right">{eur(groupCac(rows))}</td>
                     <td className={`p-3 text-right font-semibold ${probColor(groupProb(rows))}`}>{groupProb(rows) ?? "-"}</td>
-                    <td className="p-3"></td>
-                    <td className="p-3"></td>
+                    <td className="p-3 text-center">
+                      {groupConf(rows) != null && (
+                        <span className={`px-2 py-0.5 rounded-full text-xs ${confPill(groupConf(rows))}`}>{groupConf(rows)}</span>
+                      )}
+                    </td>
+                    <td className="p-3 text-slate-500 text-xs">{groupFlagged(rows) > 0 ? `${groupFlagged(rows)} to act on` : ""}</td>
                   </tr>
                   {open[ck] &&
                     [...sets.entries()].map(([adSet, setRows]) => {
@@ -123,10 +148,14 @@ export function MediaBuyingDashboard() {
                             </td>
                             <td className="p-3 text-right">{eur(sumSpend(setRows))}</td>
                             <td className="p-3 text-right">{sumBuyers(setRows)}</td>
-                            <td className="p-3 text-right">-</td>
+                            <td className="p-3 text-right">{eur(groupCac(setRows))}</td>
                             <td className={`p-3 text-right ${probColor(groupProb(setRows))}`}>{groupProb(setRows) ?? "-"}</td>
-                            <td className="p-3"></td>
-                            <td className="p-3"></td>
+                            <td className="p-3 text-center">
+                              {groupConf(setRows) != null && (
+                                <span className={`px-2 py-0.5 rounded-full text-xs ${confPill(groupConf(setRows))}`}>{groupConf(setRows)}</span>
+                              )}
+                            </td>
+                            <td className="p-3 text-slate-500 text-xs">{groupFlagged(setRows) > 0 ? `${groupFlagged(setRows)} to act on` : ""}</td>
                           </tr>
                           {open[ak] &&
                             setRows.map((r) => (
