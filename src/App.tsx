@@ -18,6 +18,7 @@ import { InputForm } from "@/pages/InputForm";
 import { Account } from "@/pages/Account";
 import { MediaBuyingDashboard } from "@/pages/MediaBuyingDashboard";
 import { TestIntelligence } from "@/pages/TestIntelligence";
+import { DecisionOS } from "@/pages/DecisionOS";
 
 function DefaultRedirect() {
     const { person, loading, user } = useAuth();
@@ -98,6 +99,7 @@ export default function App() {
                         </Route>
                         {/* Admin-only: master ops, data browser, KPI editor, team registry */}
                         <Route element={<Gate allow={["Admin"]} />}>
+                            <Route path="/decision-os" element={<DecisionOS />} />
                             <Route path="/media-buying" element={<MediaBuyingDashboard />} />
                             <Route path="/intelligence" element={<TestIntelligence />} />
                             <Route path="/ea" element={<EaDashboard />} />
