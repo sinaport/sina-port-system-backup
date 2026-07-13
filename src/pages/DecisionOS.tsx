@@ -43,6 +43,91 @@ const actionPill = (d: string) =>
     : d === "Reduce" || d === "Watch" ? "bg-red-100 text-red-700"
     : "bg-slate-100 text-slate-600";
 
+// Reallocation, ported from Abu's DecisionOS mockup: re-slice a fixed pool by
+// probability x confidence (convex, so winners pull ahead), cut assets to zero,
+// caution discounted. Nothing new is added; the pool is conserved.
+function allocWeight(r: DeptRow): number {
+  if (r.decision === "Watch") return 0; // cut -> freed
+  let base = Math.pow(r.probability / 100, 2) * (r.confidence / 100);
+  if (r.decision === "Reduce") base *= 0.6; // caution
+  return base;
+}
+function roundToPool(targets: number[], pool: number): number[] {
+  const r = targets.map((t) => Math.round(t));
+  let drift = Math.round(pool) - r.reduce((a, b) => a + b, 0);
+  const order = targets.map((_, i) => i).sort((a, b) => targets[b] - targets[a]);
+  let k = 0;
+  while (drift !== 0 && order.length && k < 5000) {
+    const i = order[k % order.length];
+    if (drift > 0) { r[i]++; drift--; } else if (r[i] > 0) { r[i]--; drift++; }
+    k++;
+  }
+  return r;
+}
+function recommendAllocs(rows: DeptRow[]): number[] {
+  const pool = rows.reduce((a, r) => a + r.volume, 0);
+  const W = rows.map(allocWeight);
+  const sum = W.reduce((a, b) => a + b, 0);
+  if (sum === 0) return rows.map((r) => r.volume);
+  const raw = rows.map((_, i) => (pool * W[i]) / sum);
+  return roundToPool(raw, pool);
+}
+
+function RebalanceModal({ rows, dept, onClose }: { rows: DeptRow[]; dept: string; onClose: () => void }) {
+  const sorted = [...rows].sort((a, b) => b.probability - a.probability);
+  const pool = sorted.reduce((a, r) => a + r.volume, 0);
+  const next = recommendAllocs(sorted);
+  const [applied, setApplied] = useState(false);
+  const maxAlloc = Math.max(1, ...next);
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-xl max-w-2xl w-full max-h-[85vh] overflow-y-auto p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-start justify-between">
+          <div>
+            <h3 className="text-lg font-semibold">Rebalance {ALLOCATING[dept]}</h3>
+            <p className="text-sm text-slate-500">
+              Fixed pool of {pool.toLocaleString()} re-sliced by probability x confidence. Nothing new is added.
+            </p>
+          </div>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
+        </div>
+        <div className="text-xs rounded-lg bg-amber-50 text-amber-700 px-3 py-2">
+          Capacity limits are not yet wired, so allocations here are uncapped. Once per-person capacity is connected, the split respects each person's ceiling.
+        </div>
+        <div className="space-y-1">
+          {sorted.map((r, i) => {
+            const delta = next[i] - r.volume;
+            return (
+              <div key={r.entity} className="flex items-center gap-3 py-2 border-b last:border-0">
+                <div className="w-32 shrink-0">
+                  <div className="text-sm font-medium truncate" title={r.entity}>{r.entity}</div>
+                  <div className="text-xs text-slate-400">{r.probability}% x {r.confidence}%</div>
+                </div>
+                <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
+                  <div className={`h-full rounded-full ${barColor(r.probability)}`} style={{ width: `${(next[i] / maxAlloc) * 100}%` }} />
+                </div>
+                <div className="w-28 text-right text-sm tabular-nums">
+                  {r.volume.toLocaleString()} <span className="text-slate-400">to</span> <span className="font-semibold">{next[i].toLocaleString()}</span>
+                </div>
+                <div className={`w-12 text-right text-xs font-medium ${delta > 0 ? "text-green-600" : delta < 0 ? "text-red-600" : "text-slate-400"}`}>
+                  {delta > 0 ? `+${delta}` : delta}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="flex items-center justify-end gap-3 pt-2">
+          {applied && <span className="text-sm text-green-600">Recommendation saved for review.</span>}
+          <button onClick={onClose} className="px-4 py-2 rounded-lg bg-slate-100 text-sm">Cancel</button>
+          <button onClick={() => setApplied(true)} disabled={applied}
+            className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm disabled:opacity-50">Apply rebalance</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Bar({ value, color }: { value: number; color: string }) {
   return (
     <div className="flex items-center gap-2">
@@ -59,12 +144,20 @@ function DepartmentView({ rows, dept }: { rows: DeptRow[]; dept: string }) {
   const scale = sorted.filter((r) => r.decision === "Scale up" || r.decision === "Increase").length;
   const cut = sorted.filter((r) => r.decision === "Reduce" || r.decision === "Watch").length;
   const noun = dept === "funnel" ? "Funnels" : dept === "setter" ? "Setters" : "Closers";
+  const [rebalancing, setRebalancing] = useState(false);
 
   return (
     <div className="flex-1 p-6 space-y-4">
-      <div className="flex items-center gap-2">
-        <h2 className="text-lg font-semibold">{noun}</h2>
-        <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">Allocating: {ALLOCATING[dept]}</span>
+      {rebalancing && <RebalanceModal rows={sorted} dept={dept} onClose={() => setRebalancing(false)} />}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-semibold">{noun}</h2>
+          <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">Allocating: {ALLOCATING[dept]}</span>
+        </div>
+        <button onClick={() => setRebalancing(true)}
+          className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700">
+          Rebalance {ALLOCATING[dept]}
+        </button>
       </div>
       <div className="rounded-lg bg-blue-50/60 text-slate-600 text-sm px-4 py-2">{QUESTION[dept]}</div>
 

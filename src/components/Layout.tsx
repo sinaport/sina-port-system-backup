@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
-import { LogOut, LayoutDashboard, GaugeCircle, AlertCircle, Trophy, FlaskConical, Users, PhoneCall, GraduationCap, Beaker, Database, UserPlus, UserCog, Plus, FileText, Link2 } from "lucide-react";
+import { LogOut, LayoutDashboard, GaugeCircle, AlertCircle, Trophy, FlaskConical, Users, PhoneCall, GraduationCap, Beaker, Database, Cpu, UserPlus, UserCog, Plus, FileText, Link2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 
@@ -39,6 +39,7 @@ function roleSections(dashboardLabel: string, to: string): NavSection[] {
 const NAV_BY_DEPARTMENT: Record<string, NavSection[]> = {
     Admin: [
         { items: [{ label: "Operations overview", to: "/ea", icon: LayoutDashboard }] },
+        { items: [{ label: "Decision OS", to: "/decision-os", icon: Cpu }] },
         { heading: "Dashboards", items: [
             { label: "Setter view", to: "/setter", icon: Users },
             { label: "Closer view", to: "/closer", icon: PhoneCall },
