@@ -21,6 +21,7 @@ import { TestIntelligence } from "@/pages/TestIntelligence";
 import { DecisionOS } from "@/pages/DecisionOS";
 import { TestEngine } from "@/pages/TestEngine";
 import { DynamicPage } from "@/pages/DynamicPage";
+import { FunnelPage } from "@/pages/FunnelPage";
 
 function DefaultRedirect() {
     const { person, loading, user } = useAuth();
@@ -79,6 +80,7 @@ export default function App() {
             <BrowserRouter>
                 <Routes>
                     {/* Public customer-facing forms (no auth) */}
+                    <Route path="/f/:slug" element={<FunnelPage />} />
                     <Route path="/wins" element={<WinsForm />} />
                     <Route path="/audit/gm3" element={<BrandAuditForm variant="gm3" />} />
                     <Route path="/audit/gptby" element={<BrandAuditForm variant="gptby" />} />

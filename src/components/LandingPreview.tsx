@@ -8,7 +8,7 @@ export interface LiveElement {
   content: Record<string, unknown>;
 }
 
-export function LandingPreview({ live }: { live: LiveElement[] }) {
+export function LandingPreview({ live, onCtaClick }: { live: LiveElement[]; onCtaClick?: () => void }) {
   const byKey: Record<string, Record<string, unknown>> = {};
   for (const e of live) byKey[e.element_key] = e.content ?? {};
 
@@ -34,7 +34,7 @@ export function LandingPreview({ live }: { live: LiveElement[] }) {
             <figcaption className="text-slate-400 text-xs mt-1">— {testimonialAuthor}</figcaption>
           </figure>
         )}
-        <button className={`px-6 py-3 rounded-lg text-white text-sm font-semibold ${ctaClass}`}>{ctaLabel}</button>
+        <button onClick={onCtaClick} className={`px-6 py-3 rounded-lg text-white text-sm font-semibold ${ctaClass}`}>{ctaLabel}</button>
       </div>
     </div>
   );
