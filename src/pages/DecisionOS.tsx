@@ -7,7 +7,7 @@
 import { useMemo, useState } from "react";
 import { useRoleView } from "@/hooks/useRoleView";
 import { MediaBuyingDashboard } from "@/pages/MediaBuyingDashboard";
-import { Megaphone, Filter, Phone, PhoneCall } from "lucide-react";
+import { Megaphone, Filter, Phone, PhoneCall, Video, PenTool, LifeBuoy, Package, Users } from "lucide-react";
 
 interface DeptRow {
   entity_type: string;
@@ -22,17 +22,34 @@ interface DeptRow {
 
 const DEPARTMENTS = [
   { key: "media", label: "Media Buying", sub: "Creative to Budget", icon: Megaphone },
+  { key: "content", label: "Content", sub: "Content to Leads", icon: PenTool },
   { key: "funnel", label: "Funnels", sub: "Funnel to Traffic", icon: Filter },
+  { key: "webinar", label: "Webinars", sub: "Webinar to Calls", icon: Video },
   { key: "setter", label: "Setters", sub: "Setter to Leads", icon: Phone },
   { key: "closer", label: "Closers", sub: "Closer to Calls", icon: PhoneCall },
+  { key: "success", label: "Success", sub: "Ascension to Backend", icon: LifeBuoy },
+  { key: "product", label: "Product", sub: "Awaiting data source", icon: Package },
+  { key: "hiring", label: "Hiring", sub: "Awaiting data source", icon: Users },
 ] as const;
 
 const QUESTION: Record<string, string> = {
   funnel: "Which funnel deserves more traffic? Win probability is the chance it books above the team's rate.",
+  webinar: "Which webinar deserves more registrations? Win probability is the chance it books calls above the team's rate.",
+  content: "Which content deserves more promotion? Win probability is the chance it turns leads into calls above the team's rate.",
   setter: "Which setter should get the next lead? Win probability is the chance they turn leads into booked calls.",
   closer: "Which closer should get the next call? Win probability is the chance they close an assigned lead.",
+  success: "Which ascension play deserves more focus? Win probability is the chance its backend ROAS beats the team's median.",
 };
-const ALLOCATING: Record<string, string> = { funnel: "Traffic", setter: "Leads", closer: "Calls" };
+// Only departments with a real allocatable input pool get a Rebalance action.
+const ALLOCATING: Record<string, string> = { funnel: "Traffic", setter: "Leads", closer: "Calls", webinar: "Registrations" };
+const NOUN: Record<string, { plural: string; singular: string }> = {
+  funnel: { plural: "Funnels", singular: "Funnel" },
+  setter: { plural: "Setters", singular: "Setter" },
+  closer: { plural: "Closers", singular: "Closer" },
+  webinar: { plural: "Webinars", singular: "Webinar" },
+  content: { plural: "Content", singular: "Content" },
+  success: { plural: "Ascension plays", singular: "Ascension play" },
+};
 
 const barColor = (v: number) =>
   v >= 80 ? "bg-green-500" : v >= 58 ? "bg-blue-500" : v >= 40 ? "bg-amber-500" : "bg-red-500";
@@ -140,29 +157,46 @@ function Bar({ value, color }: { value: number; color: string }) {
 }
 
 function DepartmentView({ rows, dept }: { rows: DeptRow[]; dept: string }) {
+  const [rebalancing, setRebalancing] = useState(false);
+  const label = DEPARTMENTS.find((d) => d.key === dept)?.label ?? dept;
+  const nouns = NOUN[dept] ?? { plural: label, singular: label };
+  const canRebalance = !!ALLOCATING[dept];
   const sorted = [...rows].sort((a, b) => b.probability - a.probability);
+
+  if (sorted.length === 0) {
+    return (
+      <div className="flex-1 p-6">
+        <h2 className="text-lg font-semibold mb-3">{label}</h2>
+        <div className="rounded-lg border border-dashed bg-slate-50 text-slate-500 text-sm px-4 py-10 text-center">
+          No data source is connected for {label} yet. This department is part of the model and populates its scores once its source is wired.
+        </div>
+      </div>
+    );
+  }
+
   const scale = sorted.filter((r) => r.decision === "Scale up" || r.decision === "Increase").length;
   const cut = sorted.filter((r) => r.decision === "Reduce" || r.decision === "Watch").length;
-  const noun = dept === "funnel" ? "Funnels" : dept === "setter" ? "Setters" : "Closers";
-  const [rebalancing, setRebalancing] = useState(false);
+  const isPct = (sorted[0]?.metric_label ?? "").includes("%");
 
   return (
     <div className="flex-1 p-6 space-y-4">
-      {rebalancing && <RebalanceModal rows={sorted} dept={dept} onClose={() => setRebalancing(false)} />}
+      {rebalancing && canRebalance && <RebalanceModal rows={sorted} dept={dept} onClose={() => setRebalancing(false)} />}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h2 className="text-lg font-semibold">{noun}</h2>
-          <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">Allocating: {ALLOCATING[dept]}</span>
+          <h2 className="text-lg font-semibold">{nouns.plural}</h2>
+          {canRebalance && <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">Allocating: {ALLOCATING[dept]}</span>}
         </div>
-        <button onClick={() => setRebalancing(true)}
-          className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700">
-          Rebalance {ALLOCATING[dept]}
-        </button>
+        {canRebalance && (
+          <button onClick={() => setRebalancing(true)}
+            className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700">
+            Rebalance {ALLOCATING[dept]}
+          </button>
+        )}
       </div>
-      <div className="rounded-lg bg-blue-50/60 text-slate-600 text-sm px-4 py-2">{QUESTION[dept]}</div>
+      {QUESTION[dept] && <div className="rounded-lg bg-blue-50/60 text-slate-600 text-sm px-4 py-2">{QUESTION[dept]}</div>}
 
       <div className="flex gap-8 text-sm">
-        <div><div className="text-slate-400 text-xs">{noun}</div><div className="font-semibold">{sorted.length}</div></div>
+        <div><div className="text-slate-400 text-xs">{nouns.plural}</div><div className="font-semibold">{sorted.length}</div></div>
         <div><div className="text-slate-400 text-xs">Scale / grow</div><div className="font-semibold text-green-600">{scale}</div></div>
         <div><div className="text-slate-400 text-xs">Cut / stop</div><div className="font-semibold text-red-600">{cut}</div></div>
       </div>
@@ -171,7 +205,7 @@ function DepartmentView({ rows, dept }: { rows: DeptRow[]; dept: string }) {
         <table className="w-full text-sm min-w-[720px]">
           <thead className="bg-slate-50 text-slate-500 text-left">
             <tr>
-              <th className="p-3">{noun.slice(0, -1)}</th>
+              <th className="p-3">{nouns.singular}</th>
               <th className="p-3 text-right">{sorted[0]?.metric_label ?? "Rate"}</th>
               <th className="p-3">Win Probability</th>
               <th className="p-3">Confidence</th>
@@ -184,7 +218,7 @@ function DepartmentView({ rows, dept }: { rows: DeptRow[]; dept: string }) {
                 <td className="p-3 font-medium">{r.entity}
                   <span className="text-slate-400 font-normal ml-2 text-xs">{r.volume.toLocaleString()} vol</span>
                 </td>
-                <td className="p-3 text-right tabular-nums">{r.metric_value}%</td>
+                <td className="p-3 text-right tabular-nums">{r.metric_value}{isPct ? "%" : ""}</td>
                 <td className="p-3"><Bar value={r.probability} color={barColor(r.probability)} /></td>
                 <td className="p-3"><Bar value={r.confidence} color={confBarColor(r.confidence)} /></td>
                 <td className="p-3"><span className={`px-2 py-0.5 rounded-full text-xs ${actionPill(r.decision)}`}>{r.decision}</span></td>
