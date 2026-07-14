@@ -19,6 +19,8 @@ import { Account } from "@/pages/Account";
 import { MediaBuyingDashboard } from "@/pages/MediaBuyingDashboard";
 import { TestIntelligence } from "@/pages/TestIntelligence";
 import { DecisionOS } from "@/pages/DecisionOS";
+import { TestEngine } from "@/pages/TestEngine";
+import { DynamicPage } from "@/pages/DynamicPage";
 
 function DefaultRedirect() {
     const { person, loading, user } = useAuth();
@@ -100,6 +102,7 @@ export default function App() {
                         {/* Admin-only: master ops, data browser, KPI editor, team registry */}
                         <Route element={<Gate allow={["Admin"]} />}>
                             <Route path="/decision-os" element={<DecisionOS />} />
+                            <Route path="/test-engine" element={<TestEngine />} />
                             <Route path="/media-buying" element={<MediaBuyingDashboard />} />
                             <Route path="/intelligence" element={<TestIntelligence />} />
                             <Route path="/ea" element={<EaDashboard />} />
@@ -118,6 +121,7 @@ export default function App() {
                         <Route path="/log/winner" element={<RegistrySubmit kind="winner" />} />
                         <Route path="/log/test-input" element={<RegistrySubmit kind="test_input" />} />
                         <Route path="/testing" element={<TestingForm />} />
+                        <Route path="/p/:slug" element={<DynamicPage />} />
                         <Route path="/account" element={<Account />} />
                     </Route>
                 </Routes>

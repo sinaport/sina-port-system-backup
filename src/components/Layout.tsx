@@ -40,6 +40,7 @@ const NAV_BY_DEPARTMENT: Record<string, NavSection[]> = {
     Admin: [
         { items: [{ label: "Operations overview", to: "/ea", icon: LayoutDashboard }] },
         { items: [{ label: "Decision OS", to: "/decision-os", icon: Cpu }] },
+        { items: [{ label: "Test Engine", to: "/test-engine", icon: Beaker }] },
         { heading: "Dashboards", items: [
             { label: "Setter view", to: "/setter", icon: Users },
             { label: "Closer view", to: "/closer", icon: PhoneCall },
