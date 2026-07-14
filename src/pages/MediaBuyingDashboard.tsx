@@ -12,6 +12,8 @@
 // Media Buying tab of Decision OS.
 import { useMemo, useState } from "react";
 import { useRoleView } from "@/hooks/useRoleView";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/hooks/useAuth";
 import { ChevronRight, ChevronDown } from "lucide-react";
 
 interface Row {
@@ -116,7 +118,21 @@ function BudgetRebalanceModal({ creatives, onClose }: { creatives: Row[]; onClos
   const pool = sumSpend(sorted);
   const next = recommendBudget(sorted);
   const maxAlloc = Math.max(1, ...next);
+  const { user } = useAuth();
   const [applied, setApplied] = useState(false);
+  const [committing, setCommitting] = useState(false);
+
+  async function commit() {
+    setCommitting(true);
+    const allocations = sorted.map((r, i) => ({ entity: r.creative, from: r.spend_eur ?? 0, to: next[i] }));
+    const { error } = await supabase.schema("engine" as never).rpc("fn_commit_rebalance", {
+      p_department: "media", p_allocating: "Budget", p_pool: pool,
+      p_allocations: allocations, p_approved_by: user?.email ?? "admin",
+    });
+    if (error) alert("Commit failed: " + error.message);
+    else setApplied(true);
+    setCommitting(false);
+  }
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
@@ -131,7 +147,7 @@ function BudgetRebalanceModal({ creatives, onClose }: { creatives: Row[]; onClos
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
         </div>
         <div className="text-xs rounded-lg bg-amber-50 text-amber-700 px-3 py-2">
-          Recommendation only. This does not touch Meta. Delivery caps and learning-phase limits are not modelled, so treat this as the direction to shift, not exact euros.
+          Apply commits this reallocation as a recorded, auditable decision. It does not push to Meta yet; delivery caps and learning-phase limits are applied when it does. Treat the euros as the direction to shift.
         </div>
         <div className="space-y-1">
           {sorted.map((r, i) => {
@@ -157,10 +173,10 @@ function BudgetRebalanceModal({ creatives, onClose }: { creatives: Row[]; onClos
           })}
         </div>
         <div className="flex items-center justify-end gap-3 pt-2">
-          {applied && <span className="text-sm text-green-600">Recommendation saved for review.</span>}
+          {applied && <span className="text-sm text-green-600">Rebalance committed and logged.</span>}
           <button onClick={onClose} className="px-4 py-2 rounded-lg bg-slate-100 text-sm">Cancel</button>
-          <button onClick={() => setApplied(true)} disabled={applied}
-            className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm disabled:opacity-50">Apply rebalance</button>
+          <button onClick={commit} disabled={applied || committing}
+            className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm disabled:opacity-50">{committing ? "Committing..." : applied ? "Committed" : "Apply rebalance"}</button>
         </div>
       </div>
     </div>

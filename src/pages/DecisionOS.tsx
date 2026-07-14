@@ -6,6 +6,8 @@
 // Wired into App.tsx inside the Admin gate at /decision-os.
 import { useMemo, useState } from "react";
 import { useRoleView } from "@/hooks/useRoleView";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/hooks/useAuth";
 import { MediaBuyingDashboard } from "@/pages/MediaBuyingDashboard";
 import { Megaphone, Filter, Phone, PhoneCall, Video, PenTool, LifeBuoy, Package, Users } from "lucide-react";
 
@@ -94,8 +96,22 @@ function RebalanceModal({ rows, dept, onClose }: { rows: DeptRow[]; dept: string
   const sorted = [...rows].sort((a, b) => b.probability - a.probability);
   const pool = sorted.reduce((a, r) => a + r.volume, 0);
   const next = recommendAllocs(sorted);
+  const { user } = useAuth();
   const [applied, setApplied] = useState(false);
+  const [committing, setCommitting] = useState(false);
   const maxAlloc = Math.max(1, ...next);
+
+  async function commit() {
+    setCommitting(true);
+    const allocations = sorted.map((r, i) => ({ entity: r.entity, from: r.volume, to: next[i] }));
+    const { error } = await supabase.schema("engine" as never).rpc("fn_commit_rebalance", {
+      p_department: dept, p_allocating: ALLOCATING[dept] ?? null, p_pool: pool,
+      p_allocations: allocations, p_approved_by: user?.email ?? "admin",
+    });
+    if (error) alert("Commit failed: " + error.message);
+    else setApplied(true);
+    setCommitting(false);
+  }
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
@@ -110,7 +126,7 @@ function RebalanceModal({ rows, dept, onClose }: { rows: DeptRow[]; dept: string
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
         </div>
         <div className="text-xs rounded-lg bg-amber-50 text-amber-700 px-3 py-2">
-          Capacity limits are not yet wired, so allocations here are uncapped. Once per-person capacity is connected, the split respects each person's ceiling.
+          Apply commits this reallocation as a recorded, auditable decision. Pushing it into the live systems (GHL leads, Meta budget) is the next step.
         </div>
         <div className="space-y-1">
           {sorted.map((r, i) => {
@@ -135,10 +151,10 @@ function RebalanceModal({ rows, dept, onClose }: { rows: DeptRow[]; dept: string
           })}
         </div>
         <div className="flex items-center justify-end gap-3 pt-2">
-          {applied && <span className="text-sm text-green-600">Recommendation saved for review.</span>}
+          {applied && <span className="text-sm text-green-600">Rebalance committed and logged.</span>}
           <button onClick={onClose} className="px-4 py-2 rounded-lg bg-slate-100 text-sm">Cancel</button>
-          <button onClick={() => setApplied(true)} disabled={applied}
-            className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm disabled:opacity-50">Apply rebalance</button>
+          <button onClick={commit} disabled={applied || committing}
+            className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm disabled:opacity-50">{committing ? "Committing..." : applied ? "Committed" : "Apply rebalance"}</button>
         </div>
       </div>
     </div>
