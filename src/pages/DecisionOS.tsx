@@ -126,7 +126,7 @@ function RebalanceModal({ rows, dept, onClose }: { rows: DeptRow[]; dept: string
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
         </div>
         <div className="text-xs rounded-lg bg-amber-50 text-amber-700 px-3 py-2">
-          Apply commits this reallocation as a recorded, auditable decision. Pushing it into the live systems (GHL leads, Meta budget) is the next step.
+          Apply commits this reallocation as a recorded, auditable decision. Pushing it into the live systems (lead assignment, Meta budget) is the next step.
         </div>
         <div className="space-y-1">
           {sorted.map((r, i) => {

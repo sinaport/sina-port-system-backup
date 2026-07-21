@@ -1,12 +1,14 @@
 // Media Buying: campaigns to ad sets to creatives, with the columns Facebook
 // cannot give you: win probability, confidence and the recommended action.
-// Reads engine.v_media_buying (live scores joined to spend/CAC).
+// Reads engine.v_media_buying_enriched (scores joined to spend/CAC, plus ROAS,
+// Leads and an Unattributed label on rows with no ad spend).
 //
 // Shares the Decision OS department language: win probability and confidence
 // render as bars, a framing question up top, and a Budget rebalance that
 // re-slices spend across creatives by probability x confidence (recommend-only).
 // The campaign -> ad set -> creative tree is kept (media is richer than the flat
-// entity departments).
+// entity departments), and mirrors the Meta Ads layout for familiarity: native
+// filters on campaign / ad set / status plus per-column show-hide.
 //
 // Wired into App.tsx inside the Admin gate at /media-buying, and embedded as the
 // Media Buying tab of Decision OS.
@@ -25,7 +27,9 @@ interface Row {
   spend_eur: number | null;
   hto_buyers: number | null;
   cash_collected_eur: number | null;
-  cac_eur: number | null;
+  actual_cac_eur: number | null;
+  roas: number | null;
+  leads: number | null;
   probability: number | null;
   confidence: number | null;
   decision: string | null;
@@ -34,6 +38,7 @@ interface Row {
 
 const eur = (n: number | null) =>
   n == null ? "-" : new Intl.NumberFormat("en", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
+const num2 = (n: number | null) => (n == null ? "-" : n.toFixed(2));
 
 // Shared bar palette with Decision OS's DepartmentView, so all departments read the same.
 const barColor = (v: number) =>
@@ -55,11 +60,18 @@ function groupProb(rows: Row[]): number | null {
 }
 const sumSpend = (rows: Row[]) => rows.reduce((s, r) => s + (r.spend_eur ?? 0), 0);
 const sumBuyers = (rows: Row[]) => rows.reduce((s, r) => s + (r.hto_buyers ?? 0), 0);
+const sumLeads = (rows: Row[]) => rows.reduce((s, r) => s + (r.leads ?? 0), 0);
+const sumCash = (rows: Row[]) => rows.reduce((s, r) => s + (r.cash_collected_eur ?? 0), 0);
 
 // aggregate CAC = total spend / total buyers
 function groupCac(rows: Row[]): number | null {
   const buyers = sumBuyers(rows);
   return buyers > 0 ? Math.round(sumSpend(rows) / buyers) : null;
+}
+// aggregate ROAS = total cash collected / total spend
+function groupRoas(rows: Row[]): number | null {
+  const spend = sumSpend(rows);
+  return spend > 0 ? Math.round((sumCash(rows) / spend) * 100) / 100 : null;
 }
 // spend-weighted average confidence for a group
 function groupConf(rows: Row[]): number | null {
@@ -183,15 +195,63 @@ function BudgetRebalanceModal({ creatives, onClose }: { creatives: Row[]; onClos
   );
 }
 
+const COLUMN_DEFS: Array<[string, string]> = [
+  ["spend", "Spend"],
+  ["buyers", "Buyers"],
+  ["cac", "CAC"],
+  ["roas", "ROAS"],
+  ["leads", "Leads"],
+  ["prob", "Win %"],
+  ["conf", "Confidence"],
+];
+
 export function MediaBuyingDashboard() {
-  const { data, loading, error } = useRoleView<Row>("v_media_buying");
+  const { data, loading, error } = useRoleView<Row>("v_media_buying_enriched");
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const [rebalancing, setRebalancing] = useState(false);
   const toggle = (k: string) => setOpen((o) => ({ ...o, [k]: !o[k] }));
 
+  // Meta-style native filters + per-column show/hide.
+  const [q, setQ] = useState("");
+  const [campaignF, setCampaignF] = useState("all");
+  const [adSetF, setAdSetF] = useState("all");
+  const [activeOnly, setActiveOnly] = useState(false);
+  const [cols, setCols] = useState<Record<string, boolean>>({
+    spend: true, buyers: true, cac: true, roas: true, leads: true, prob: true, conf: true,
+  });
+
+  const campaignOptions = useMemo(() => {
+    const s = new Set<string>();
+    for (const r of data ?? []) s.add(r.campaign ?? "Uncategorised");
+    return [...s].sort();
+  }, [data]);
+
+  const adSetOptions = useMemo(() => {
+    const s = new Set<string>();
+    for (const r of data ?? []) {
+      if (campaignF !== "all" && (r.campaign ?? "Uncategorised") !== campaignF) continue;
+      s.add(r.ad_set ?? "Uncategorised");
+    }
+    return [...s].sort();
+  }, [data, campaignF]);
+
+  const filtered = useMemo(() => {
+    const needle = q.trim().toLowerCase();
+    return (data ?? []).filter((r) => {
+      if (campaignF !== "all" && (r.campaign ?? "Uncategorised") !== campaignF) return false;
+      if (adSetF !== "all" && (r.ad_set ?? "Uncategorised") !== adSetF) return false;
+      if (activeOnly && (r.meta_status ?? "").toUpperCase() !== "ACTIVE") return false;
+      if (needle) {
+        const hay = `${r.campaign ?? ""} ${r.ad_set ?? ""} ${r.creative ?? ""}`.toLowerCase();
+        if (!hay.includes(needle)) return false;
+      }
+      return true;
+    });
+  }, [data, q, campaignF, adSetF, activeOnly]);
+
   const tree = useMemo(() => {
     const byCampaign = new Map<string, Map<string, Row[]>>();
-    for (const r of data ?? []) {
+    for (const r of filtered) {
       const c = r.campaign ?? "Uncategorised";
       const a = r.ad_set ?? "Uncategorised";
       if (!byCampaign.has(c)) byCampaign.set(c, new Map());
@@ -202,7 +262,7 @@ export function MediaBuyingDashboard() {
     return [...byCampaign.entries()]
       .map(([campaign, sets]) => ({ campaign, rows: [...sets.values()].flat(), sets }))
       .sort((a, b) => sumSpend(b.rows) - sumSpend(a.rows));
-  }, [data]);
+  }, [filtered]);
 
   const creatives = useMemo(() => tree.flatMap((t) => t.rows), [tree]);
   const scaleN = creatives.filter((r) => r.decision && (r.decision.startsWith("Increase") || r.decision === "Graduate")).length;
@@ -229,10 +289,63 @@ export function MediaBuyingDashboard() {
         Which creative deserves more budget? Win probability is the chance it converts spend to buyers above the account's rate.
       </div>
 
+      {/* Meta-style filter bar */}
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Search campaign, ad set or creative"
+          className="px-3 py-2 rounded-lg border text-sm w-64"
+        />
+        <select
+          value={campaignF}
+          onChange={(e) => { setCampaignF(e.target.value); setAdSetF("all"); }}
+          className="px-3 py-2 rounded-lg border text-sm max-w-[16rem]"
+        >
+          <option value="all">All campaigns</option>
+          {campaignOptions.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+        <select
+          value={adSetF}
+          onChange={(e) => setAdSetF(e.target.value)}
+          className="px-3 py-2 rounded-lg border text-sm max-w-[16rem]"
+        >
+          <option value="all">All ad sets</option>
+          {adSetOptions.map((a) => <option key={a} value={a}>{a}</option>)}
+        </select>
+        <label className="flex items-center gap-2 text-sm text-slate-600">
+          <input type="checkbox" checked={activeOnly} onChange={(e) => setActiveOnly(e.target.checked)} />
+          Active only
+        </label>
+        {(q || campaignF !== "all" || adSetF !== "all" || activeOnly) && (
+          <button
+            onClick={() => { setQ(""); setCampaignF("all"); setAdSetF("all"); setActiveOnly(false); }}
+            className="text-sm text-blue-600 hover:underline"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+
+      {/* Column show/hide */}
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        <span className="text-slate-400">Columns:</span>
+        {COLUMN_DEFS.map(([key, label]) => (
+          <button
+            key={key}
+            onClick={() => setCols((c) => ({ ...c, [key]: !c[key] }))}
+            className={`px-2 py-1 rounded-full border ${cols[key] ? "bg-blue-50 border-blue-200 text-blue-700" : "bg-white border-slate-200 text-slate-400"}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       <div className="flex gap-8 text-sm">
         <div><div className="text-slate-400 text-xs">Creatives</div><div className="font-semibold">{creatives.length}</div></div>
         <div><div className="text-slate-400 text-xs">Scale / grow</div><div className="font-semibold text-green-600">{scaleN}</div></div>
         <div><div className="text-slate-400 text-xs">Cut / stop</div><div className="font-semibold text-red-600">{cutN}</div></div>
+        <div><div className="text-slate-400 text-xs">Leads</div><div className="font-semibold">{sumLeads(creatives)}</div></div>
       </div>
 
       <div className="border rounded-lg overflow-x-auto">
@@ -240,11 +353,13 @@ export function MediaBuyingDashboard() {
           <thead className="bg-slate-50 text-slate-500 text-left">
             <tr>
               <th className="p-3">Campaign / Ad set / Creative</th>
-              <th className="p-3 text-right">Spend</th>
-              <th className="p-3 text-right">Buyers</th>
-              <th className="p-3 text-right">CAC</th>
-              <th className="p-3">Win Probability</th>
-              <th className="p-3">Confidence</th>
+              {cols.spend && <th className="p-3 text-right">Spend</th>}
+              {cols.buyers && <th className="p-3 text-right">Buyers</th>}
+              {cols.cac && <th className="p-3 text-right">CAC</th>}
+              {cols.roas && <th className="p-3 text-right">ROAS</th>}
+              {cols.leads && <th className="p-3 text-right">Leads</th>}
+              {cols.prob && <th className="p-3">Win Probability</th>}
+              {cols.conf && <th className="p-3">Confidence</th>}
               <th className="p-3">Action</th>
             </tr>
           </thead>
@@ -258,11 +373,13 @@ export function MediaBuyingDashboard() {
                       {open[ck] ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                       {campaign}
                     </td>
-                    <td className="p-3 text-right">{eur(sumSpend(rows))}</td>
-                    <td className="p-3 text-right">{sumBuyers(rows)}</td>
-                    <td className="p-3 text-right">{eur(groupCac(rows))}</td>
-                    <td className="p-3"><Bar value={groupProb(rows)} color={barColor(groupProb(rows) ?? 0)} /></td>
-                    <td className="p-3"><Bar value={groupConf(rows)} color={confBarColor(groupConf(rows) ?? 0)} /></td>
+                    {cols.spend && <td className="p-3 text-right">{eur(sumSpend(rows))}</td>}
+                    {cols.buyers && <td className="p-3 text-right">{sumBuyers(rows)}</td>}
+                    {cols.cac && <td className="p-3 text-right">{eur(groupCac(rows))}</td>}
+                    {cols.roas && <td className="p-3 text-right">{num2(groupRoas(rows))}</td>}
+                    {cols.leads && <td className="p-3 text-right">{sumLeads(rows)}</td>}
+                    {cols.prob && <td className="p-3"><Bar value={groupProb(rows)} color={barColor(groupProb(rows) ?? 0)} /></td>}
+                    {cols.conf && <td className="p-3"><Bar value={groupConf(rows)} color={confBarColor(groupConf(rows) ?? 0)} /></td>}
                     <td className="p-3" />
                   </tr>
                   {open[ck] &&
@@ -275,22 +392,26 @@ export function MediaBuyingDashboard() {
                               {open[ak] ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                               {adSet}
                             </td>
-                            <td className="p-3 text-right">{eur(sumSpend(setRows))}</td>
-                            <td className="p-3 text-right">{sumBuyers(setRows)}</td>
-                            <td className="p-3 text-right">{eur(groupCac(setRows))}</td>
-                            <td className="p-3"><Bar value={groupProb(setRows)} color={barColor(groupProb(setRows) ?? 0)} /></td>
-                            <td className="p-3"><Bar value={groupConf(setRows)} color={confBarColor(groupConf(setRows) ?? 0)} /></td>
+                            {cols.spend && <td className="p-3 text-right">{eur(sumSpend(setRows))}</td>}
+                            {cols.buyers && <td className="p-3 text-right">{sumBuyers(setRows)}</td>}
+                            {cols.cac && <td className="p-3 text-right">{eur(groupCac(setRows))}</td>}
+                            {cols.roas && <td className="p-3 text-right">{num2(groupRoas(setRows))}</td>}
+                            {cols.leads && <td className="p-3 text-right">{sumLeads(setRows)}</td>}
+                            {cols.prob && <td className="p-3"><Bar value={groupProb(setRows)} color={barColor(groupProb(setRows) ?? 0)} /></td>}
+                            {cols.conf && <td className="p-3"><Bar value={groupConf(setRows)} color={confBarColor(groupConf(setRows) ?? 0)} /></td>}
                             <td className="p-3" />
                           </tr>
                           {open[ak] &&
                             setRows.map((r) => (
                               <tr key={r.ad_id ?? r.creative} className="border-t hover:bg-slate-50">
                                 <td className="p-3 pl-14 max-w-md truncate text-slate-600" title={r.creative}>{r.creative}</td>
-                                <td className="p-3 text-right">{eur(r.spend_eur)}</td>
-                                <td className="p-3 text-right">{r.hto_buyers ?? 0}</td>
-                                <td className="p-3 text-right">{eur(r.cac_eur)}</td>
-                                <td className="p-3"><Bar value={r.probability} color={barColor(r.probability ?? 0)} /></td>
-                                <td className="p-3"><Bar value={r.confidence} color={confBarColor(r.confidence ?? 0)} /></td>
+                                {cols.spend && <td className="p-3 text-right">{eur(r.spend_eur)}</td>}
+                                {cols.buyers && <td className="p-3 text-right">{r.hto_buyers ?? 0}</td>}
+                                {cols.cac && <td className="p-3 text-right">{eur(r.actual_cac_eur)}</td>}
+                                {cols.roas && <td className="p-3 text-right">{num2(r.roas)}</td>}
+                                {cols.leads && <td className="p-3 text-right">{r.leads ?? 0}</td>}
+                                {cols.prob && <td className="p-3"><Bar value={r.probability} color={barColor(r.probability ?? 0)} /></td>}
+                                {cols.conf && <td className="p-3"><Bar value={r.confidence} color={confBarColor(r.confidence ?? 0)} /></td>}
                                 <td className="p-3">
                                   <span className={`px-2 py-0.5 rounded-full text-xs ${decisionPill(r.decision)}`}>{r.decision ?? "-"}</span>
                                 </td>
