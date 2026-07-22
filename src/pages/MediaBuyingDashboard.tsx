@@ -28,6 +28,7 @@ interface Row {
   hto_buyers: number | null;
   cash_collected_eur: number | null;
   actual_cac_eur: number | null;
+  projected_cac_eur: number | null;
   roas: number | null;
   leads: number | null;
   probability: number | null;
@@ -72,6 +73,17 @@ function groupCac(rows: Row[]): number | null {
 function groupRoas(rows: Row[]): number | null {
   const spend = sumSpend(rows);
   return spend > 0 ? Math.round((sumCash(rows) / spend) * 100) / 100 : null;
+}
+// aggregate Projected CAC (Abu's formula): spend / expected buyers, where expected buyers are
+// this group's leads run through the funnel's benchmark conversion, floored at buyers already
+// realized so it never reads worse than actual. BENCH = live lead->buyer rate
+// (leadToCall * callToShow * showToHto). Per-creative values come pre-computed from the view.
+const BENCH = 0.155 * 0.222 * 0.5;
+function groupProjCac(rows: Row[]): number | null {
+  const spend = sumSpend(rows);
+  if (spend <= 0) return null;
+  const expected = Math.max(sumBuyers(rows), sumLeads(rows) * BENCH, 0.25);
+  return Math.round(spend / expected);
 }
 // spend-weighted average confidence for a group
 function groupConf(rows: Row[]): number | null {
@@ -199,6 +211,7 @@ const COLUMN_DEFS: Array<[string, string]> = [
   ["spend", "Spend"],
   ["buyers", "Buyers"],
   ["cac", "CAC"],
+  ["pcac", "Proj. CAC"],
   ["roas", "ROAS"],
   ["leads", "Leads"],
   ["prob", "Win %"],
@@ -217,7 +230,7 @@ export function MediaBuyingDashboard() {
   const [adSetF, setAdSetF] = useState("all");
   const [activeOnly, setActiveOnly] = useState(false);
   const [cols, setCols] = useState<Record<string, boolean>>({
-    spend: true, buyers: true, cac: true, roas: true, leads: true, prob: true, conf: true,
+    spend: true, buyers: true, cac: true, pcac: true, roas: true, leads: true, prob: true, conf: true,
   });
 
   const campaignOptions = useMemo(() => {
@@ -356,6 +369,7 @@ export function MediaBuyingDashboard() {
               {cols.spend && <th className="p-3 text-right">Spend</th>}
               {cols.buyers && <th className="p-3 text-right">Buyers</th>}
               {cols.cac && <th className="p-3 text-right">CAC</th>}
+              {cols.pcac && <th className="p-3 text-right">Proj. CAC</th>}
               {cols.roas && <th className="p-3 text-right">ROAS</th>}
               {cols.leads && <th className="p-3 text-right">Leads</th>}
               {cols.prob && <th className="p-3">Win Probability</th>}
@@ -376,6 +390,7 @@ export function MediaBuyingDashboard() {
                     {cols.spend && <td className="p-3 text-right">{eur(sumSpend(rows))}</td>}
                     {cols.buyers && <td className="p-3 text-right">{sumBuyers(rows)}</td>}
                     {cols.cac && <td className="p-3 text-right">{eur(groupCac(rows))}</td>}
+                    {cols.pcac && <td className="p-3 text-right">{eur(groupProjCac(rows))}</td>}
                     {cols.roas && <td className="p-3 text-right">{num2(groupRoas(rows))}</td>}
                     {cols.leads && <td className="p-3 text-right">{sumLeads(rows)}</td>}
                     {cols.prob && <td className="p-3"><Bar value={groupProb(rows)} color={barColor(groupProb(rows) ?? 0)} /></td>}
@@ -395,6 +410,7 @@ export function MediaBuyingDashboard() {
                             {cols.spend && <td className="p-3 text-right">{eur(sumSpend(setRows))}</td>}
                             {cols.buyers && <td className="p-3 text-right">{sumBuyers(setRows)}</td>}
                             {cols.cac && <td className="p-3 text-right">{eur(groupCac(setRows))}</td>}
+                            {cols.pcac && <td className="p-3 text-right">{eur(groupProjCac(setRows))}</td>}
                             {cols.roas && <td className="p-3 text-right">{num2(groupRoas(setRows))}</td>}
                             {cols.leads && <td className="p-3 text-right">{sumLeads(setRows)}</td>}
                             {cols.prob && <td className="p-3"><Bar value={groupProb(setRows)} color={barColor(groupProb(setRows) ?? 0)} /></td>}
@@ -408,6 +424,7 @@ export function MediaBuyingDashboard() {
                                 {cols.spend && <td className="p-3 text-right">{eur(r.spend_eur)}</td>}
                                 {cols.buyers && <td className="p-3 text-right">{r.hto_buyers ?? 0}</td>}
                                 {cols.cac && <td className="p-3 text-right">{eur(r.actual_cac_eur)}</td>}
+                                {cols.pcac && <td className="p-3 text-right">{eur(r.projected_cac_eur)}</td>}
                                 {cols.roas && <td className="p-3 text-right">{num2(r.roas)}</td>}
                                 {cols.leads && <td className="p-3 text-right">{r.leads ?? 0}</td>}
                                 {cols.prob && <td className="p-3"><Bar value={r.probability} color={barColor(r.probability ?? 0)} /></td>}
